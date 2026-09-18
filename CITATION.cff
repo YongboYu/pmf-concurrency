@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper listed under preferred-citation."
+title: "pmf-concurrency"
+abstract: "Code and results for concurrency-aware process model forecasting with causal nets."
+type: software
+authors:
+  - family-names: "Yu"
+    given-names: "Yongbo"
+    affiliation: "Research Center for Information Systems Engineering (LIRIS), KU Leuven"
+license: MIT
+repository-code: "https://github.com/YongboYu/pmf-concurrency"
+keywords:
+  - process mining
+  - process model forecasting
+  - causal nets
+  - concurrency
+  - conformance checking
+  - time series forecasting
+preferred-citation:
+  type: conference-paper
+  title: "Concurrency-Aware Process Model Forecasting with Causal Nets"
+  status: submitted
+  year: 2026
+  authors:
+    - family-names: "Yu"
+      given-names: "Yongbo"
+      affiliation: "Research Center for Information Systems Engineering (LIRIS), KU Leuven"
+    - family-names: "Peeperkorn"
+      given-names: "Jari"
+      affiliation: "Research Center for Information Systems Engineering (LIRIS), KU Leuven"
+    - family-names: "De Smedt"
+      given-names: "Johannes"
+      affiliation: "Research Center for Information Systems Engineering (LIRIS), KU Leuven"
+    - family-names: "De Weerdt"
+      given-names: "Jochen"
+      affiliation: "Research Center for Information Systems Engineering (LIRIS), KU Leuven"

@@ -1,0 +1,26 @@
+# Event logs, fetched by scripts/fetch_data.py and never redistributed
+data/
+
+# Pipeline outputs
+outputs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# OS and editor
+.DS_Store
+.idea/
+.vscode/
