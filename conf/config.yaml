@@ -1,0 +1,27 @@
+defaults:
+  - dataset: bpi2017   # default dataset; override with dataset=<name>
+  - _self_
+
+experiment:
+  # Campaign root: `experiment.output_base=<dir>` on the command line, else
+  # $PMF_OUTPUT_BASE, else `outputs`. The conformance scripts only see the
+  # environment variable, so use it for any campaign that is scored later.
+  # See src/pmf_concurrency/paths.py.
+  output_base: ${oc.env:PMF_OUTPUT_BASE,outputs}
+  seed: 42         # torch seed, set before each series is forecast
+  train_ratio: 0.8
+  tD: 0.5          # dependency threshold
+  tL1L: 0.5        # self-loop (length-1 loop) threshold
+  tL2L: 0.5        # length-2 loop threshold
+  tPAT: 0.0        # binding filter: 0 keeps bindings at or above the mean
+                   # (Fodina's default); -1 keeps all
+  horizon: 7       # forecast horizon in days
+  device: cpu      # torch device: cpu | cuda | mps
+
+# Keep the working directory, so data/ and outputs/ resolve from the project root.
+hydra:
+  job:
+    chdir: false
+  output_subdir: null   # no .hydra/ directories
+  run:
+    dir: .
