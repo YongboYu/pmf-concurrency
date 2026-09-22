@@ -1,0 +1,126 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pmf-concurrency"
+version = "0.1.0"
+description = "Concurrency-aware process model forecasting with causal nets."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+authors = [
+    { name = "Yongbo Yu" },
+]
+dependencies = [
+    "pm4py>=2.7.19",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "torch>=2.0",
+    "chronos-forecasting>=2.0",
+    "hydra-core>=1.3",
+    "omegaconf>=2.3",
+]
+
+[project.urls]
+Repository = "https://github.com/YongboYu/pmf-concurrency"
+
+# =============================================================================
+# Dev dependencies
+# =============================================================================
+# Install: uv sync --group dev
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.0",
+    "ruff>=0.8",
+    "mypy>=1.14",
+    "pytest>=9.0.3",
+    "pytest-cov>=6.0",
+]
+
+# =============================================================================
+# Hatchling build config
+# =============================================================================
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pmf_concurrency"]
+
+# =============================================================================
+# Ruff: linting and formatting
+# =============================================================================
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "S",    # flake8-bandit
+    "C4",   # flake8-comprehensions
+    "RUF",  # Ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (formatter handles this)
+    "N802",   # function name should be lowercase (domain threshold names: tDUP, etc.)
+    "N803",   # argument name should be lowercase (domain abbreviations: A, AB, IB, OB, etc.)
+    "N806",   # variable in function should be lowercase (domain abbreviations: A, AB, IB, OB, etc.)
+    "N816",   # variable in global scope should be lowercase (module-scope domain names in scripts: tD, daily_AB, etc.)
+    "S603",   # subprocess call (intentional Graphviz rendering, nosec annotated)
+    "S607",   # partial executable path (intentional: `dot` from Graphviz)
+    "RUF002", # ambiguous unicode in docstring (intentional typographic formatting)
+    "RUF003", # ambiguous unicode in comment (intentional typographic formatting)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+"__init__.py" = ["F401"]
+"src/pmf_concurrency/fodina.py" = ["C4", "SIM", "N", "RUF"]   # reference implementation, kept as is
+
+[tool.ruff.lint.isort]
+known-first-party = ["pmf_concurrency"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+# =============================================================================
+# mypy: static type checking
+# =============================================================================
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false       # set true when ready for strict mode
+check_untyped_defs = true
+ignore_missing_imports = true
+mypy_path = "src"
+
+# =============================================================================
+# pytest + coverage
+# =============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "**/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+# fail_under = 60  # uncomment when ready to enforce coverage threshold
