@@ -122,7 +122,9 @@ reports Direct-mined and Static at `tPAT = 0.0` only, hence the family selection
 second run.
 
 Models and drawings produced by this code are published as the Hugging Face dataset
-[pmf-liris/pmf-concurrency-models](https://huggingface.co/datasets/pmf-liris/pmf-concurrency-models).
+[pmf-liris/pmf-concurrency-models](https://huggingface.co/datasets/pmf-liris/pmf-concurrency-models),
+and the Space [pmf-liris/pmf-concurrency-viewer](https://huggingface.co/spaces/pmf-liris/pmf-concurrency-viewer)
+shows the drawings side by side for comparison.
 
 Figure 2 of the paper:
 
