@@ -3,6 +3,7 @@ data/
 
 # Pipeline outputs
 outputs/
+drawings/
 *.log
 
 # Python

@@ -13,8 +13,9 @@ uv sync
 ```
 
 Python 3.12 is pinned in `.python-version`, and `uv sync` installs it if needed.
-Drawing each model as a PDF needs [Graphviz](https://graphviz.org/download/) (`dot` on
-the `PATH`). Without it the pipeline skips the drawings.
+Drawing the models needs [Graphviz](https://graphviz.org/download/) (`dot` on the
+`PATH`). Without it the pipeline skips its PDF drawings, and `scripts/render_nets.py`
+(section 6) stops.
 
 ## 2. Fetch the event logs
 
@@ -102,4 +103,31 @@ at a time need about 48 GB of memory.
 ```sh
 PMF_OUTPUT_BASE=outputs_tpat0 uv run python scripts/evaluate.py --dataset sepsis \
     --reduce-levels tau --evaluators token_etc --windows 1 2 3 4 --out-dir eval/part1
+```
+
+## 6. Draw the models
+
+```sh
+uv run python scripts/render_nets.py --output-base outputs_tpat0 --out-dir drawings/tpat0
+uv run python scripts/render_nets.py --output-base outputs_tpatm1 --out-dir drawings/tpatm1 \
+    --families forecast re_mined
+```
+
+Each model is drawn as its workflow net twice, as constructed and after τ-reduction, with
+the model's frequencies on the nodes. `drawings/<tag>/<Log>/index.csv` lists every model
+with its log, tPAT, window dates, net size before and after reduction and its files. The
+Static model is the same in every window and is drawn once. A model without tasks, such
+as a Forecast whose counts are all zero, is listed in the index and not drawn. The paper
+reports Direct-mined and Static at `tPAT = 0.0` only, hence the family selection for the
+second run.
+
+Models and drawings produced by this code are published as the Hugging Face dataset
+[pmf-liris/pmf-concurrency-models](https://huggingface.co/datasets/pmf-liris/pmf-concurrency-models).
+
+Figure 2 of the paper:
+
+```sh
+uv run python scripts/render_nets.py --output-base outputs_tpatm1 \
+    --out-dir figures --datasets BPI2017 --families forecast --windows 1 \
+    --formats pdf --no-title --no-reduced-labels
 ```
