@@ -107,3 +107,22 @@ def test_every_series_in_both_periods_is_forecast(monkeypatch) -> None:
 
     assert list(result) == ["A", "B"]
     assert all(rows.shape == (2, 2) for rows in result.values())
+
+
+def test_the_sorted_middle_is_recorded_on_request_without_changing_the_forecast() -> (
+    None
+):
+    """Decision 1.6's counts compare the 0.5 level with the old median over levels."""
+    stub = _StubChronos()
+    train = np.arange(12, dtype=np.float32)
+    test = 100 + np.arange(5, dtype=np.float32)
+    middle: list[np.ndarray] = []
+
+    rows = forecasting._sliding_forecast(
+        stub, train, test, horizon=2, seed=42, median_over_levels=middle
+    )
+
+    np.testing.assert_array_equal(rows, [[19 + 12 + i] * 2 for i in range(4)])
+    np.testing.assert_array_equal(
+        np.array(middle), [[10 + 12 + i] * 2 for i in range(4)]
+    )

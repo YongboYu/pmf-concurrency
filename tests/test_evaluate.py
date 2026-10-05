@@ -32,6 +32,7 @@ def _load_evaluate():
 def _unit(model_type: str, **fields) -> dict:
     return {
         "dataset": "bpi2017",
+        "tpat": 0.0,
         "window": 1,
         "model_type": model_type,
         "mode": "case_complete",
@@ -62,6 +63,9 @@ def run_evaluate(tmp_path, monkeypatch):
     mod = _load_evaluate()
     weekly = tmp_path / "weekly_models"
     weekly.mkdir()
+    (tmp_path / "experiment_summary.json").write_text(
+        json.dumps({"thresholds": {"tPAT": -1.0}})
+    )
     for family in ("forecast", "static"):
         meta = {"start_date": "20210301", "end_date": "20210307", "type": family}
         (weekly / f"window_1_{family}.json").write_text(json.dumps({"metadata": meta}))
@@ -108,6 +112,7 @@ def run_evaluate(tmp_path, monkeypatch):
     _run.weekly = weekly  # type: ignore[attr-defined]
     _run.remaining_checked = remaining_checked  # type: ignore[attr-defined]
     _run.module = mod  # type: ignore[attr-defined]
+    _run.root = tmp_path  # type: ignore[attr-defined]
     return _run
 
 
@@ -191,6 +196,94 @@ def test_resume_refuses_a_changed_concurrency(run_evaluate):
         run_evaluate("--model-types", "forecast", "--concurrency", "2", *_ONE_UNIT)
 
 
+def test_rows_carry_the_tpat_of_the_run_that_built_the_models(run_evaluate):
+    run_evaluate("--model-types", "static", *_ONE_UNIT)
+
+    assert pd.read_csv(run_evaluate.res_csv)["tpat"].tolist() == [-1.0]
+    assert json.loads(run_evaluate.manifest.read_text())["tpat"] == -1.0
+
+
+def test_models_without_a_recorded_tpat_are_refused(run_evaluate):
+    (run_evaluate.root / "experiment_summary.json").unlink()
+
+    with pytest.raises(SystemExit, match="tPAT"):
+        run_evaluate("--model-types", "static", *_ONE_UNIT)
+
+
+def test_units_that_differ_only_in_tpat_are_distinct(tmp_path):
+    csv = _write_units(
+        tmp_path / "evaluation.csv", [_unit("static"), _unit("static", tpat=-1.0)]
+    )
+
+    assert len(_load_evaluate().read_units(csv)) == 2
+
+
+def _expected(run_evaluate, rows: list[dict]) -> str:
+    from pmf_concurrency.campaign import EXPECTED_COLUMNS
+
+    base = {
+        "dataset": "bpi2017",
+        "tpat": -1.0,
+        "window": 1,
+        "mode": "case_complete",
+        "evaluator": "token_etc",
+        "reduce_level": "none",
+        "start_date": "20210301",
+        "end_date": "20210307",
+        "cohort": "table2",
+    }
+    path = run_evaluate.root / "expected_units.csv"
+    frame = pd.DataFrame([{**base, **r} for r in rows])
+    frame.reindex(columns=list(EXPECTED_COLUMNS)).to_csv(path, index=False)
+    return str(path)
+
+
+def test_an_expected_grid_names_the_units_to_run(run_evaluate):
+    grid = _expected(
+        run_evaluate,
+        [
+            {"model_type": "static"},
+            # Another tPAT, another log: not this run's.
+            {"model_type": "forecast", "tpat": 0.0},
+            {"model_type": "forecast", "dataset": "sepsis"},
+        ],
+    )
+
+    evaluated = run_evaluate("--expected", grid)
+
+    assert evaluated == ["static"]
+    assert json.loads(run_evaluate.manifest.read_text())["expected_sha256"]
+
+
+def test_a_missing_model_in_the_grid_stops_before_any_unit(run_evaluate):
+    grid = _expected(
+        run_evaluate, [{"model_type": "static"}, {"model_type": "static", "window": 2}]
+    )
+
+    with pytest.raises(SystemExit, match=r"window_2_static\.json"):
+        run_evaluate("--expected", grid)
+    assert not run_evaluate.res_csv.exists()
+
+
+def test_a_model_with_other_dates_than_the_grid_stops_the_run(run_evaluate):
+    grid = _expected(run_evaluate, [{"model_type": "static", "end_date": "20210308"}])
+
+    with pytest.raises(SystemExit, match="20210308"):
+        run_evaluate("--expected", grid)
+
+
+def test_a_campaign_needs_an_expected_grid(run_evaluate, monkeypatch):
+    from pmf_concurrency.guard import Enforcement
+
+    monkeypatch.setattr(
+        run_evaluate.module, "enforcement", lambda: Enforcement("cgroup", True)
+    )
+
+    with pytest.raises(SystemExit, match="--expected"):
+        run_evaluate("--model-types", "static", *_ONE_UNIT, development=False)
+    assert not run_evaluate.res_csv.exists()
+
+
 def test_a_campaign_needs_the_per_unit_cgroup(run_evaluate, monkeypatch):
     """RLIMIT_AS or a time-only budget is for development, never for a campaign."""
     monkeypatch.delenv("PMF_GUARD_ENFORCE", raising=False)
@@ -202,8 +295,15 @@ def test_a_campaign_needs_the_per_unit_cgroup(run_evaluate, monkeypatch):
 
 def test_er_rows_record_the_window_fragments_they_scored(run_evaluate):
     """ER always scores the window's fragments, whatever the replay mode."""
-    run_evaluate("--model-types", "static", "--evaluators", "er", "token_etc",
-                 "--reduce-levels", "none")  # fmt: skip
+    run_evaluate(
+        "--model-types",
+        "static",
+        "--evaluators",
+        "er",
+        "token_etc",
+        "--reduce-levels",
+        "none",
+    )
 
     rows = pd.read_csv(run_evaluate.res_csv).set_index("evaluator")
     assert rows.loc["er", "mode"] == "window"
@@ -214,10 +314,19 @@ def test_er_rows_record_the_window_fragments_they_scored(run_evaluate):
 
 
 def test_er_is_evaluated_once_across_replay_modes(run_evaluate):
-    run_evaluate("--model-types", "static", "--evaluators", "er",
-                 "--reduce-levels", "none")  # fmt: skip
-    evaluated = run_evaluate("--mode", "window_raw", "--model-types", "static",
-                             "--evaluators", "er", "--reduce-levels", "none")  # fmt: skip
+    run_evaluate(
+        "--model-types", "static", "--evaluators", "er", "--reduce-levels", "none"
+    )
+    evaluated = run_evaluate(
+        "--mode",
+        "window_raw",
+        "--model-types",
+        "static",
+        "--evaluators",
+        "er",
+        "--reduce-levels",
+        "none",
+    )
 
     assert evaluated == ["static"]
     assert len(pd.read_csv(run_evaluate.res_csv)) == 1

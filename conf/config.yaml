@@ -17,6 +17,8 @@ experiment:
                    # (Fodina's default); -1 keeps all
   horizon: 7       # forecast horizon in days
   device: cpu      # torch device: cpu | cuda | mps
+  record_median_over_levels: false  # also save the sorted-middle forecasts, to
+                                    # compare it with the 0.5 level (scripts/median_choice.py)
 
 # Keep the working directory, so data/ and outputs/ resolve from the project root.
 hydra:

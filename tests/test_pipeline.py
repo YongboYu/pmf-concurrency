@@ -45,6 +45,7 @@ DATASET_DIR = "Synth_pmf"
 
 #: Outputs a run does not write.
 _NOT_WRITTEN = (
+    "median_over_levels",
     "forecasted_model.json",
     "direct_mined_model.json",
     "static_model.json",
@@ -239,6 +240,90 @@ def _hydra_call(monkeypatch, *overrides: str) -> dict[str, Any]:
         cfg = compose(config_name="config", overrides=list(overrides))
     pipeline.main.__wrapped__(cfg)
     return captured
+
+
+def _fake_forecast_with_middle(scale: dict[str, float]):
+    """The flat-mean forecast, recording ``scale[series key]`` times it as the sorted
+    middle (1 where the key is not named)."""
+
+    def _forecast(
+        train, test, horizon=7, device="cpu", seed=42, median_over_levels=None
+    ):
+        point = _fake_chronos_forecast(train, test, horizon, device, seed)
+        if median_over_levels is not None:
+            for key, rows in point.items():
+                median_over_levels[key] = rows * scale.get(key, 1.0)
+        return point
+
+    return _forecast
+
+
+def test_the_sorted_middle_is_saved_only_when_asked(run_pipeline, monkeypatch) -> None:
+    monkeypatch.setattr(
+        pipeline, "chronos_sliding_forecast", _fake_forecast_with_middle({})
+    )
+    _summary, output_dir = run_pipeline("run", record_median_over_levels=True)
+
+    middle = output_dir / "median_over_levels"
+    assert (middle / "forecast_A_summary.csv").exists()
+    point = sorted(p.name for p in (output_dir / "forecast_A").glob("*.npy"))
+    assert sorted(p.name for p in (middle / "forecast_A").glob("*.npy")) == point
+
+
+def test_median_choice_counts_what_the_point_forecast_changes(
+    run_pipeline, monkeypatch
+) -> None:
+    """Decision 1.6: days, weekly counts, and nets whose topology or activity
+    frequencies differ between the 0.5 level and the sorted middle."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "median_choice", ROOT / "scripts" / "median_choice.py"
+    )
+    assert spec and spec.loader
+    median_choice = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(median_choice)
+
+    monkeypatch.setattr(
+        pipeline, "chronos_sliding_forecast", _fake_forecast_with_middle({})
+    )
+    _summary, same = run_pipeline("same", record_median_over_levels=True)
+    counts = median_choice.median_choice_counts(same)
+    assert counts["n_windows"] > 0
+    for key in (
+        "n_values_differ",
+        "n_weekly_counts_differ",
+        "n_nets_topology_differ",
+        "n_nets_frequencies_differ",
+    ):
+        assert counts[key] == 0, key
+
+    # Doubling one activity's count moves only the frequencies.
+    monkeypatch.setattr(
+        pipeline, "chronos_sliding_forecast", _fake_forecast_with_middle({"B": 2.0})
+    )
+    _summary, freq = run_pipeline("freq", record_median_over_levels=True)
+    counts = median_choice.median_choice_counts(freq)
+    assert counts["n_values_differ"] > 0
+    assert counts["max_weekly_relative_change"] == pytest.approx(1.0)
+    assert counts["n_nets_frequencies_differ"] == counts["n_windows"]
+    assert counts["n_nets_topology_differ"] == 0
+    assert counts["n_weekly_counts_enter_or_leave"] == 0
+
+    # Zeroing every relation count empties the nets.
+    zero = dict.fromkeys(_relation_keys(freq), 0.0)
+    monkeypatch.setattr(
+        pipeline, "chronos_sliding_forecast", _fake_forecast_with_middle(zero)
+    )
+    _summary, topo = run_pipeline("topo", record_median_over_levels=True)
+    counts = median_choice.median_choice_counts(topo)
+    assert counts["n_nets_topology_differ"] == counts["n_windows"]
+    # A series whose count drops to 0 leaves the net.
+    assert counts["n_weekly_counts_enter_or_leave"] > 0
+
+
+def _relation_keys(output_dir: Path) -> list[str]:
+    return pd.read_csv(output_dir / "forecast_AB_summary.csv")["series_key"].tolist()
 
 
 def test_tpat_on_the_command_line_reaches_the_pipeline(monkeypatch) -> None:

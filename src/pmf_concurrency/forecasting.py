@@ -37,10 +37,13 @@ def _sliding_forecast(
     test_values: np.ndarray,
     horizon: int,
     seed: int,
+    median_over_levels: list[np.ndarray] | None = None,
 ) -> np.ndarray:
     """Forecasts of one series, one row per window of ``horizon`` test days.
 
     The context grows by one observed day per window, from the training length on.
+    ``median_over_levels``, if given, receives each window's middle of the sorted
+    quantiles, for comparison with the 0.5 level only.
     """
     n_sequences = len(test_values) - horizon + 1
     if n_sequences <= 0:
@@ -55,6 +58,8 @@ def _sliding_forecast(
         context = np.concatenate([train_values, test_values[:seq_idx]])
         if len(context) < 10:
             forecasts.append(np.zeros(horizon))
+            if median_over_levels is not None:
+                median_over_levels.append(np.zeros(horizon))
             continue
 
         context_tensor = (
@@ -66,6 +71,10 @@ def _sliding_forecast(
         # Chronos-2 returns quantiles, not samples: (n_quantiles, horizon) here. The
         # point forecast is the 0.5 level, the predictive median.
         forecasts.append(forecast[0][median_row].cpu().numpy())
+        if median_over_levels is not None:
+            median_over_levels.append(
+                torch.median(forecast[0], dim=0).values.cpu().numpy()
+            )
 
     return np.array(forecasts)
 
@@ -76,11 +85,13 @@ def chronos_sliding_forecast(
     horizon: int = 7,
     device: str = "cpu",
     seed: int = 42,
+    median_over_levels: dict[str, np.ndarray] | None = None,
 ) -> dict[str, np.ndarray]:
     """Forecast every series present in both training and test data.
 
     Each series gets test_length - horizon + 1 forecasts of length ``horizon``, with
-    context train + test[:i].
+    context train + test[:i]. ``median_over_levels``, if given, receives the middle
+    of the sorted quantiles per series in the same shape (see :func:`_sliding_forecast`).
 
     Returns:
         Dict of series name -> array of shape (n_sequences, horizon)
@@ -99,12 +110,16 @@ def chronos_sliding_forecast(
     for i, col in enumerate(common_columns):
         if (i + 1) % 50 == 0 or i == 0:
             print(f"    Forecasting series {i + 1}/{total}...")
+        middle: list[np.ndarray] | None = [] if median_over_levels is not None else None
         results[col] = _sliding_forecast(
             pipeline,
             train_series[col].values.astype(np.float32),
             test_series[col].values.astype(np.float32),
             horizon,
             seed,
+            middle,
         )
+        if median_over_levels is not None:
+            median_over_levels[col] = np.array(middle)
 
     return results

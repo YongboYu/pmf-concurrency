@@ -20,13 +20,18 @@ number if it has none (``failure_category``, ``guard_reason``), and what it used
 needs the per-unit cgroup (start it with ``scripts/local/delegated_scope.sh``);
 ``--development`` allows the weaker fallbacks and the manifest records which was used.
 
-A resume must use the same log, models, budgets, code, environment, machine,
+Units are keyed by tPAT too, read from the pipeline run's ``experiment_summary.json``.
+A campaign runs exactly the units of its ``expected_units.csv`` (``--expected``, see
+``scripts/evaluation_campaign.py``) and stops before the first unit if a model they
+need is missing, does not parse or has other window dates.
+
+A resume must use the same log, models, grid, budgets, code, environment, machine,
 concurrency and budget enforcement, which ``evaluation_manifest.json`` records. OMP and MKL
 default to 8 threads, because the thread count can change floating-point results.
 
 Usage, from the project root:
     bash scripts/local/delegated_scope.sh uv run python scripts/evaluate.py \
-        --dataset sepsis --windows 6 7 8 --concurrency 3
+        --dataset sepsis --expected expected_units.csv --windows 6 7 8 --concurrency 3
     uv run python scripts/evaluate.py --development --dataset bpi2017 \
         --reduce-levels tau --evaluators token_etc alignment er
 
@@ -60,6 +65,13 @@ import numpy as np
 import pandas as pd
 from _dataset import DATASETS, resolve_dataset
 
+from pmf_concurrency.campaign import (
+    ER_MODE,
+    UNIT_KEY,
+    check_models,
+    read_expected,
+    run_tpat,
+)
 from pmf_concurrency.conformance import (
     METRIC_KEYS,
     EvaluationMode,
@@ -96,16 +108,11 @@ MANIFEST_FILENAME = "evaluation_manifest.json"
 #: ``guard_reason`` of an ``ok`` unit whose model accepts no trace.
 EMPTY_MODEL = "empty model"
 
-#: ``mode`` of an ER row: ER scores the window's fragments in every replay mode.
-ER_MODE = "window"
-
-#: Identifies one evaluation unit.
-UNIT_KEY = ("dataset", "window", "model_type", "mode", "evaluator", "reduce_level")
-
 # Evaluators return different metrics, so every row is reindexed to this schema before
 # it is appended.
 CSV_COLUMNS = [
     "dataset",
+    "tpat",
     "window",
     "model_type",
     "mode",
@@ -183,10 +190,13 @@ def evaluation_manifest(
     mem_gb: float | None,
     time_min: float | None,
     concurrency: int = 1,
+    tpat: float | None = None,
+    expected: Path | None = None,
 ) -> dict:
     """What every unit in one output directory must share.
 
-    The inputs and budgets; the code (commit, and a hash of the uncommitted changes),
+    The inputs (log, models, their tPAT, the expected grid if any) and budgets; the
+    code (commit, and a hash of the uncommitted changes),
     ``uv.lock``, Python and pm4py; the machine; how many units of the campaign run at
     once; and the guard: ``PMF_GUARD``, the enforcement mechanism and whether it is in
     force. The mode, windows, families, levels and evaluators are part of each unit's
@@ -197,6 +207,8 @@ def evaluation_manifest(
     return {
         "log_sha256": _sha256([Path(log_path)]),
         "models_sha256": _sha256(sorted(weekly_dir.glob("window_*.json"))),
+        "tpat": tpat,
+        "expected_sha256": _sha256([expected]) if expected is not None else None,
         "mem_gb": mem_gb,
         "time_min": time_min,
         "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
@@ -437,6 +449,14 @@ def main() -> None:
         help="units of this campaign running at once on this machine (recorded)",
     )
     parser.add_argument(
+        "--expected",
+        type=Path,
+        default=None,
+        help="expected_units.csv of the campaign: run exactly its units for this log "
+        "and tPAT (narrowed by the other options), after checking every model they "
+        "need; required unless --development",
+    )
+    parser.add_argument(
         "--development",
         action="store_true",
         help="allow running without the per-unit cgroup (RLIMIT_AS or time only)",
@@ -463,17 +483,55 @@ def main() -> None:
     # Every window lies after the training period, so the whole log serves all modes.
     df = normalise_timestamp(load_event_log(LOG_PATH))
 
-    window_numbers = sorted(
-        {int(p.stem.split("_")[1]) for p in weekly_dir.glob("window_*.json")}
-    )
-    if args.windows:
-        window_numbers = [w for w in window_numbers if w in set(args.windows)]
+    tpat = run_tpat(weekly_dir)
+    if tpat is None:
+        raise SystemExit(
+            f"evaluate.py: {weekly_dir.parent / 'experiment_summary.json'} records no "
+            "tPAT, so the units cannot be keyed by it."
+        )
+
+    # The units to run: the expected grid's, or else every model on disk.
+    wanted: set[tuple] | None = None
+    if args.expected is not None:
+        grid = read_expected(args.expected)
+        grid = grid[
+            (grid["dataset"] == args.dataset)
+            & (grid["tpat"].astype(float) == tpat)
+            & grid["model_type"].isin(args.model_types)
+            & grid["evaluator"].isin(args.evaluators)
+            & grid["reduce_level"].isin(args.reduce_levels)
+            & ((grid["evaluator"] == "er") | (grid["mode"] == args.mode))
+        ]
+        if args.windows:
+            grid = grid[grid["window"].isin(args.windows)]
+        problems = check_models(grid, {(args.dataset, tpat): weekly_dir})
+        if problems:
+            raise SystemExit(
+                "evaluate.py: the models do not match the expected grid:\n  "
+                + "\n  ".join(problems)
+            )
+        wanted = {
+            tuple(r) for r in grid[list(UNIT_KEY)].itertuples(index=False, name=None)
+        }
+        window_numbers = sorted({int(w) for w in grid["window"]})
+    else:
+        window_numbers = sorted(
+            {int(p.stem.split("_")[1]) for p in weekly_dir.glob("window_*.json")}
+        )
+        if args.windows:
+            window_numbers = [w for w in window_numbers if w in set(args.windows)]
     if not window_numbers:
-        print(f"No weekly model JSONs found in {weekly_dir}")
+        print(f"No units to evaluate for {weekly_dir}")
         return
     try:
         manifest = evaluation_manifest(
-            LOG_PATH, weekly_dir, args.mem_gb, args.time_min, args.concurrency
+            LOG_PATH,
+            weekly_dir,
+            args.mem_gb,
+            args.time_min,
+            args.concurrency,
+            tpat,
+            args.expected,
         )
     except GuardSetupError as exc:
         raise SystemExit(f"evaluate.py: {exc}") from exc
@@ -483,6 +541,12 @@ def main() -> None:
             f"{manifest['enforcement']}, not by a per-unit cgroup. Start the run with "
             "scripts/local/delegated_scope.sh, or pass --development for a run that "
             "is not part of a campaign."
+        )
+    if args.expected is None and not args.development:
+        raise SystemExit(
+            "evaluate.py: a campaign runs the units of its expected grid: pass "
+            "--expected expected_units.csv, or --development for a run that is not "
+            "part of a campaign."
         )
     check_manifest(out_dir, manifest)
 
@@ -497,6 +561,7 @@ def main() -> None:
         done = {
             (
                 r.dataset,
+                float(r.tpat),
                 int(r.window),
                 r.model_type,
                 r.mode,
@@ -547,12 +612,15 @@ def main() -> None:
                     n_cases, n_events = scored["er" if evaluator == "er" else "replay"]
                     key = (
                         args.dataset,
+                        tpat,
                         window_num,
                         model_type,
                         mode,
                         evaluator,
                         reduce_level,
                     )
+                    if wanted is not None and key not in wanted:
+                        continue
                     if key in done:
                         n_skipped += 1
                         continue
@@ -570,6 +638,7 @@ def main() -> None:
                     wall_s = time.perf_counter() - t0
                     row = {
                         "dataset": args.dataset,
+                        "tpat": tpat,
                         "window": window_num,
                         "model_type": model_type,
                         "mode": mode,

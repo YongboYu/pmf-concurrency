@@ -48,6 +48,9 @@ from .structural_metrics import (
 )
 from .weekly_models import SERIES, StaticModel, build_weekly_models
 
+#: Where a run saves the sorted-middle forecasts when asked to.
+MEDIAN_OVER_LEVELS_DIR = "median_over_levels"
+
 
 @dataclass(frozen=True)
 class SplitLog:
@@ -122,13 +125,21 @@ def forecast_series(
     horizon: int,
     device: str,
     seed: int,
+    median_over_levels: dict[str, dict[str, np.ndarray]] | None = None,
 ) -> dict[str, dict[str, np.ndarray]]:
-    """Chronos-2 forecasts of every series, one row per evaluation window."""
+    """Chronos-2 forecasts of every series, one row per evaluation window.
+
+    ``median_over_levels``, if given, receives the middle of the sorted quantiles per
+    series, for ``scripts/median_choice.py``.
+    """
     forecasts = {}
     for name in SERIES:
         print(f"  Forecasting {name}...")
+        extra: dict[str, Any] = {}
+        if median_over_levels is not None:
+            extra["median_over_levels"] = median_over_levels.setdefault(name, {})
         forecasts[name] = chronos_sliding_forecast(
-            train[name], test[name], horizon, device, seed
+            train[name], test[name], horizon, device, seed, **extra
         )
     return forecasts
 
@@ -213,6 +224,7 @@ def run_pmf_experiment(
     horizon: int = 7,
     device: str = "cpu",
     seed: int = 42,
+    record_median_over_levels: bool = False,
 ) -> dict[str, Any]:
     """Run the pipeline for one event log.
 
@@ -227,6 +239,9 @@ def run_pmf_experiment(
         horizon:     Forecast horizon and window length in days.
         device:      Torch device for Chronos-2 ("cpu", "cuda", "mps").
         seed:        Random seed for Chronos-2.
+        record_median_over_levels: Also save the middle of the sorted quantiles
+                     under ``median_over_levels/``, to compare it with the 0.5 level
+                     (``scripts/median_choice.py``). The models do not use it.
 
     Returns:
         The run summary, as written to ``experiment_summary.json``.
@@ -249,8 +264,13 @@ def run_pmf_experiment(
     print("\nMining the Static model...")
     static = mine_static_model(log, tD, tL1L, tL2L, tPAT)
     print("\nForecasting with Chronos-2...")
-    forecasts = forecast_series(train, test, horizon, device, seed)
+    middle: dict[str, dict[str, np.ndarray]] | None = (
+        {} if record_median_over_levels else None
+    )
+    forecasts = forecast_series(train, test, horizon, device, seed, middle)
     save_forecasts(forecasts, output_dir)
+    if middle is not None:
+        save_forecasts(middle, os.path.join(output_dir, MEDIAN_OVER_LEVELS_DIR))
     print("\nBuilding the weekly models...")
     build_weekly_models(
         forecasts,
@@ -295,6 +315,9 @@ def main(cfg: DictConfig) -> None:
         horizon=cfg.experiment.horizon,
         device=cfg.experiment.device,
         seed=cfg.experiment.get("seed", 42),
+        record_median_over_levels=cfg.experiment.get(
+            "record_median_over_levels", False
+        ),
     )
 
 
