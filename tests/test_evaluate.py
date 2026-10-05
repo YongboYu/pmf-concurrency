@@ -70,9 +70,13 @@ def run_evaluate(tmp_path, monkeypatch):
     log.write_text("log")
     events = pd.DataFrame(
         {
-            "case:concept:name": ["c1", "c1"],
-            "concept:name": ["A", "B"],
-            "time:timestamp": pd.to_datetime(["2021-03-02 08:00", "2021-03-02 09:00"]),
+            # C falls after the window, so the case's full trace is longer than its
+            # window fragment.
+            "case:concept:name": ["c1", "c1", "c1"],
+            "concept:name": ["A", "B", "C"],
+            "time:timestamp": pd.to_datetime(
+                ["2021-03-02 08:00", "2021-03-02 09:00", "2021-03-09 08:00"]
+            ),
         }
     )
 
@@ -91,8 +95,11 @@ def run_evaluate(tmp_path, monkeypatch):
     monkeypatch.setattr(mod, "enable_determinism", lambda: None)
     monkeypatch.setattr(mod, "_evaluate_cell", _evaluate_cell)
 
-    def _run(*args: str) -> list[str]:
-        monkeypatch.setattr(sys, "argv", ["evaluate.py", "--dataset", "bpi2017", *args])
+    def _run(*args: str, development: bool = True) -> list[str]:
+        # Tests run without a delegated cgroup, which only --development allows.
+        extra = ["--development"] if development else []
+        argv = ["evaluate.py", "--dataset", "bpi2017", *extra, *args]
+        monkeypatch.setattr(sys, "argv", argv)
         mod.main()
         return evaluated
 
@@ -100,6 +107,7 @@ def run_evaluate(tmp_path, monkeypatch):
     _run.manifest = out / "evaluation_manifest.json"  # type: ignore[attr-defined]
     _run.weekly = weekly  # type: ignore[attr-defined]
     _run.remaining_checked = remaining_checked  # type: ignore[attr-defined]
+    _run.module = mod  # type: ignore[attr-defined]
     return _run
 
 
@@ -143,6 +151,75 @@ def test_resume_refuses_a_changed_budget(run_evaluate):
 
     with pytest.raises(SystemExit, match="time_min"):
         run_evaluate("--model-types", "static", "--time-min", "40", *_ONE_UNIT)
+    assert len(pd.read_csv(run_evaluate.res_csv)) == 1
+
+
+def test_the_manifest_names_the_code_the_machine_and_the_enforcement(run_evaluate):
+    run_evaluate("--model-types", "static", "--concurrency", "3", *_ONE_UNIT)
+
+    manifest = json.loads(run_evaluate.manifest.read_text())
+    for key in (
+        "git_commit",
+        "git_diff_sha256",
+        "uv_lock_sha256",
+        "python",
+        "pm4py",
+        "host",
+        "cpu",
+        "ram_gb",
+        "os",
+        "pmf_guard",
+        "enforcement",
+        "enforcement_in_force",
+    ):
+        assert manifest[key] not in (None, ""), key
+    assert manifest["concurrency"] == 3
+
+
+def test_resume_refuses_a_changed_guard_setting(run_evaluate, monkeypatch):
+    run_evaluate("--model-types", "static", *_ONE_UNIT)
+    monkeypatch.setenv("PMF_GUARD", "0")
+
+    with pytest.raises(SystemExit, match="pmf_guard"):
+        run_evaluate("--model-types", "forecast", *_ONE_UNIT)
+
+
+def test_resume_refuses_a_changed_concurrency(run_evaluate):
+    run_evaluate("--model-types", "static", *_ONE_UNIT)
+
+    with pytest.raises(SystemExit, match="concurrency"):
+        run_evaluate("--model-types", "forecast", "--concurrency", "2", *_ONE_UNIT)
+
+
+def test_a_campaign_needs_the_per_unit_cgroup(run_evaluate, monkeypatch):
+    """RLIMIT_AS or a time-only budget is for development, never for a campaign."""
+    monkeypatch.delenv("PMF_GUARD_ENFORCE", raising=False)
+
+    with pytest.raises(SystemExit, match="cgroup"):
+        run_evaluate("--model-types", "static", *_ONE_UNIT, development=False)
+    assert not run_evaluate.res_csv.exists()
+
+
+def test_er_rows_record_the_window_fragments_they_scored(run_evaluate):
+    """ER always scores the window's fragments, whatever the replay mode."""
+    run_evaluate("--model-types", "static", "--evaluators", "er", "token_etc",
+                 "--reduce-levels", "none")  # fmt: skip
+
+    rows = pd.read_csv(run_evaluate.res_csv).set_index("evaluator")
+    assert rows.loc["er", "mode"] == "window"
+    assert rows.loc["token_etc", "mode"] == "case_complete"
+    # The window holds A and B of the one case; case_complete replays A, B and C.
+    assert (rows.loc["er", "n_cases"], rows.loc["er", "n_events"]) == (1, 2)
+    assert rows.loc["token_etc", "n_events"] == 3
+
+
+def test_er_is_evaluated_once_across_replay_modes(run_evaluate):
+    run_evaluate("--model-types", "static", "--evaluators", "er",
+                 "--reduce-levels", "none")  # fmt: skip
+    evaluated = run_evaluate("--mode", "window_raw", "--model-types", "static",
+                             "--evaluators", "er", "--reduce-levels", "none")  # fmt: skip
+
+    assert evaluated == ["static"]
     assert len(pd.read_csv(run_evaluate.res_csv)) == 1
 
 

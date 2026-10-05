@@ -80,31 +80,52 @@ default unless `OMP_NUM_THREADS` or `MKL_NUM_THREADS` is set.
 ## 5. Evaluate
 
 ```sh
-PMF_OUTPUT_BASE=outputs_tpat0 uv run python scripts/evaluate.py --dataset sepsis \
+PMF_OUTPUT_BASE=outputs_tpat0 bash scripts/local/delegated_scope.sh \
+    uv run python scripts/evaluate.py --dataset sepsis \
     --reduce-levels tau --evaluators token_etc alignment er
 ```
 
 A unit is one window, family, reduction level and evaluator. Each unit runs in a child
-process with a budget of 12 GB and 20 minutes (`--mem-gb` and `--time-min`). A unit
-that exceeds it is recorded as `oom` or `timeout`; that is a result, not missing data.
-The memory budget is enforced on Linux only. OMP and MKL default to 8 threads.
+process with a budget of 12 GiB and 20 minutes (`--mem-gb` and `--time-min`). The memory
+budget is enforced by a cgroup per unit: `memory.max` is the budget and swap is off, so
+it caps the memory the unit itself adds. `scripts/local/delegated_scope.sh` starts the
+run in a systemd scope that allows this (Linux with cgroup v2 and systemd). Without it
+`evaluate.py` refuses to start; `--development` runs anyway, with `RLIMIT_AS` on Linux
+or no memory limit elsewhere, and the manifest records which.
+
+Every unit gets a status: `ok`; `unavailable` (finished, but its main metric, F1 or ER,
+is missing); `timeout` or `oom` (over budget); `host_oom` (the machine ran out of
+memory, so the run is invalid); `error` (an exception); or `crashed` (a signal or an exit
+without a result). `failure_category` and `guard_reason` say why, and every row records
+the child's exit code, its peak RSS and, under the cgroup, its `memory.peak` and
+`memory.events` counts. Without the cgroup, peak RSS includes pages shared with the
+parent and is only a rough guide. To check the budget enforcement on a machine, run
+`bash scripts/local/delegated_scope.sh uv run python scripts/guard_probe.py`, which
+provokes each status once.
 
 Results are appended to `$PMF_OUTPUT_BASE/<Log>_pmf/evaluation.csv` as each unit
 finishes, so a stopped run resumes where it left off. `evaluation_manifest.json` records
-the log, the models, the budgets and the thread counts, and a resume with any of them
-changed stops. A metric that could not be computed is left empty, and
-`evaluation_summary.csv` counts the units without a result (`n_intractable`,
-`n_unavailable`) next to the mean of each metric. A model that accepts no trace is
-scored with fitness 0 and no precision or F1, and counted in `n_empty_model`.
-`pct_events_unseen` is the share of events whose activity the model lacks; such a
-trace never counts as fitting.
+the log, the models, the budgets, the thread counts, the code (commit and a hash of
+uncommitted changes), `uv.lock`, the Python and pm4py versions, the machine, the
+concurrency and how the budget is enforced, and a resume with any of them changed stops. ER
+always scores the events inside the window, so its rows have mode `window`.
 
-To use more cores, run up to four processes at a time, each on its own windows and
-output directory, and concatenate their `evaluation.csv` files afterwards. Four units
-at a time need about 48 GB of memory.
+`evaluation_summary.csv` gives, for each metric, its mean, its standard deviation and
+`n_<metric>`, the number of units with a finite value out of `n_expected`. The status
+counts (`n_ok`, `n_unavailable`, `n_timeout`, ...) and `n_over_budget` (`timeout` and
+`oom`) are diagnostics, and `evaluation_failures.csv` counts the units per
+`failure_category`. A model that accepts no trace is scored with fitness 0 and no
+precision or F1, and counted in `n_empty_model`. `pct_events_unseen` is the share of
+events whose activity the model lacks; such a trace never counts as fitting.
+
+To use more cores, run up to three processes at a time, each in its own scope, on its
+own windows and output directory, with `--concurrency 3`, and concatenate their
+`evaluation.csv` files afterwards. Under the cgroup, three units can use 3 × 12 GiB
+(38.7 GB) at most, plus their parents; check that this leaves room on your machine.
 
 ```sh
-PMF_OUTPUT_BASE=outputs_tpat0 uv run python scripts/evaluate.py --dataset sepsis \
+PMF_OUTPUT_BASE=outputs_tpat0 bash scripts/local/delegated_scope.sh \
+    uv run python scripts/evaluate.py --dataset sepsis --concurrency 3 \
     --reduce-levels tau --evaluators token_etc --windows 1 2 3 4 --out-dir eval/part1
 ```
 

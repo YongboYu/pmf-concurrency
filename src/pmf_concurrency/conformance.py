@@ -38,6 +38,17 @@ def _nan_metrics() -> dict[str, float]:
     return dict.fromkeys(METRIC_KEYS, float("nan"))
 
 
+def _failure(exc: Exception, category: str) -> dict[str, str]:
+    """Why a metric is missing: a category and the exception's ``repr``.
+
+    pm4py refuses alignments and Align-ETC on a net that is not easy sound, which is
+    told apart from other failures.
+    """
+    if "easy sound" in str(exc):
+        category = "not_easy_sound"
+    return {"failure_category": category, "guard_reason": repr(exc)}
+
+
 def _f1(fitness: float, precision: float) -> float:
     """Harmonic mean of fitness and precision; NaN if either is missing."""
     if math.isnan(fitness) or math.isnan(precision):
@@ -80,7 +91,7 @@ def _run_token_replay(
     fm: Any,
     consider_remaining: bool,
     precision_variant: PrecisionVariant = "etc",
-) -> dict[str, float]:
+) -> dict[str, Any]:
     """Token replay and precision, with an explicit remaining-token flag.
 
     Uses pm4py's low-level API, since the high-level wrapper always sets
@@ -123,7 +134,7 @@ def _run_token_replay(
     ]
     perc_fit = 100.0 * sum(fitting) / len(fitting) if fitting else float("nan")
 
-    extras: dict[str, float] = {}
+    extras: dict[str, Any] = {}
     t0 = time.perf_counter()
     try:
         if precision_variant == "etc":
@@ -141,6 +152,7 @@ def _run_token_replay(
     except Exception as exc:
         logger.warning("Precision computation failed: %s", exc)
         precision = float("nan")
+        extras |= _failure(exc, "precision_failed")
     precision_wall_s = time.perf_counter() - t0
 
     return {
@@ -160,11 +172,11 @@ def _run_alignments(
     net: Any,
     im: Any,
     fm: Any,
-) -> dict[str, float]:
+) -> dict[str, Any]:
     """Alignment-based fitness and precision through pm4py's high-level API.
 
-    Alignments need an easy-sound net. If the net fails that check, the result is NaN
-    and a warning is logged. An activity the net lacks is a log move, so its trace
+    Alignments need an easy-sound net. If the net fails that check, the result is NaN,
+    a warning is logged and ``failure_category`` says so. An activity the net lacks is a log move, so its trace
     never fits.
     """
     import pm4py
@@ -177,13 +189,14 @@ def _run_alignments(
         raise  # the budget guard records it as oom
     except Exception as exc:
         logger.warning("Alignment fitness failed (likely non-easy-sound net): %s", exc)
-        return _nan_metrics()
+        return {**_nan_metrics(), **_failure(exc, "fitness_failed")}
     fitness_wall_s = time.perf_counter() - t0
 
     log_fitness = float(fit_dict.get("log_fitness", float("nan")))
     avg_trace_fitness = float(fit_dict.get("average_trace_fitness", float("nan")))
     perc_fit = float(fit_dict.get("percentage_of_fitting_traces", float("nan")))
 
+    failure: dict[str, str] = {}
     t0 = time.perf_counter()
     try:
         precision = float(pm4py.precision_alignments(log, net, im, fm))
@@ -192,9 +205,11 @@ def _run_alignments(
     except Exception as exc:
         logger.warning("Alignment precision failed: %s", exc)
         precision = float("nan")
+        failure = _failure(exc, "precision_failed")
     precision_wall_s = time.perf_counter() - t0
 
     return {
+        **failure,
         "log_fitness": log_fitness,
         "avg_trace_fitness": avg_trace_fitness,
         "perc_fit_traces": perc_fit,
@@ -212,7 +227,7 @@ def conformance_metrics(
     method: Literal["token", "alignment"] = "token",
     reduce_level: ReductionLevel = "none",
     precision_variant: PrecisionVariant = "etc",
-) -> dict[str, float]:
+) -> dict[str, Any]:
     """Fitness and precision of one model against one event log.
 
     Args:
@@ -235,7 +250,9 @@ def conformance_metrics(
         Dict with ``log_fitness``, ``avg_trace_fitness``, ``perc_fit_traces``,
         ``precision``, ``f1``, ``pct_events_unseen`` (the share of events whose
         activity the net lacks), wall times per phase and, for reduced nets, the net
-        size before and after reduction.
+        size before and after reduction. If fitness or precision could not be computed,
+        also ``failure_category`` (``not_easy_sound``, ``fitness_failed`` or
+        ``precision_failed``) and ``guard_reason``, the exception's ``repr``.
     """
     if event_df.empty:
         return _nan_metrics()

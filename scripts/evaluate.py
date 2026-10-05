@@ -10,22 +10,32 @@ A unit is one (window, family, reduce_level, evaluator):
 ETC precision discards non-fitting prefixes and Align-ETC aligns them, so the share of
 prefix mass ETC discards is recorded too. ``tau`` evaluates the net after
 language-preserving τ-reduction, and reduced units record the net size before and after.
+ER always scores the events inside the window, so its rows have mode ``window`` and
+count the fragments it scored, whatever ``--mode`` says.
 
-Every unit runs under the budget guard (12 GB and 20 min by default) and is appended to
-the CSV as soon as it finishes, so a stopped run resumes where it left off. A resume must
-use the same log, models, budgets and thread counts, which ``evaluation_manifest.json``
-records. OMP and MKL default to 8 threads, because the thread count can change
-floating-point results.
+Every unit runs under the budget guard (12 GiB and 20 min by default, see
+:mod:`pmf_concurrency.guard`) and is appended to the CSV as soon as it finishes, so a
+stopped run resumes where it left off. Each row records the unit's status, why it has no
+number if it has none (``failure_category``, ``guard_reason``), and what it used. A run
+needs the per-unit cgroup (start it with ``scripts/local/delegated_scope.sh``);
+``--development`` allows the weaker fallbacks and the manifest records which was used.
+
+A resume must use the same log, models, budgets, code, environment, machine,
+concurrency and budget enforcement, which ``evaluation_manifest.json`` records. OMP and MKL
+default to 8 threads, because the thread count can change floating-point results.
 
 Usage, from the project root:
-    uv run python scripts/evaluate.py --dataset sepsis --windows 6 7 8
-    uv run python scripts/evaluate.py --dataset bpi2017 --reduce-levels tau \
-        --evaluators token_etc alignment er
+    bash scripts/local/delegated_scope.sh uv run python scripts/evaluate.py \
+        --dataset sepsis --windows 6 7 8 --concurrency 3
+    uv run python scripts/evaluate.py --development --dataset bpi2017 \
+        --reduce-levels tau --evaluators token_etc alignment er
 
 Outputs, under $PMF_OUTPUT_BASE/<Dataset>_pmf/ unless --out-dir:
     evaluation.csv            one row per unit
-    evaluation_summary.csv    mean, std and count by (evaluator, level, family), and
-                              the number of units without a result
+    evaluation_summary.csv    by (mode, evaluator, level, family): each metric's mean,
+                              std and number of finite values (n_<metric>) out of
+                              n_expected, and one count per status
+    evaluation_failures.csv   units per failure_category
     evaluation_manifest.json  the inputs and settings every unit shares
 """
 
@@ -40,10 +50,13 @@ os.environ.setdefault("MKL_NUM_THREADS", "8")
 import argparse
 import hashlib
 import json
+import math
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import get_args
 
+import numpy as np
 import pandas as pd
 from _dataset import DATASETS, resolve_dataset
 
@@ -58,12 +71,23 @@ from pmf_concurrency.conformance import (
     parse_window_date,
 )
 from pmf_concurrency.data import load_event_log
-from pmf_concurrency.entropic_relevance import compute_er
+from pmf_concurrency.entropic_relevance import er_metrics
 from pmf_concurrency.families import MODEL_FAMILIES, check_families, model_json_path
-from pmf_concurrency.guard import resolve_budgets, run_guarded
+from pmf_concurrency.guard import (
+    GUARD_STATUSES,
+    OUTCOME_COLUMNS,
+    OVER_BUDGET,
+    GuardSetupError,
+    enforcement,
+    resolve_budgets,
+    run_guarded,
+)
 from pmf_concurrency.petri_net import accepts_nothing
+from pmf_concurrency.provenance import code_fingerprint, file_sha256, machine, versions
 from pmf_concurrency.reduction import REDUCTION_LEVELS
 from pmf_concurrency.reproducibility import enable_determinism
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 EVALUATORS = ("token_etc", "token_align_etc", "alignment", "er")
 
@@ -71,6 +95,9 @@ MANIFEST_FILENAME = "evaluation_manifest.json"
 
 #: ``guard_reason`` of an ``ok`` unit whose model accepts no trace.
 EMPTY_MODEL = "empty model"
+
+#: ``mode`` of an ER row: ER scores the window's fragments in every replay mode.
+ER_MODE = "window"
 
 #: Identifies one evaluation unit.
 UNIT_KEY = ("dataset", "window", "model_type", "mode", "evaluator", "reduce_level")
@@ -86,8 +113,7 @@ CSV_COLUMNS = [
     "reduce_level",
     "n_events",
     "n_cases",
-    "guard_status",
-    "guard_reason",
+    *OUTCOME_COLUMNS,
     "wall_s",
     *METRIC_KEYS,
     "pct_events_unseen",
@@ -152,14 +178,22 @@ def _sha256(paths: list[Path]) -> str:
 
 
 def evaluation_manifest(
-    log_path: str, weekly_dir: Path, mem_gb: float | None, time_min: float | None
+    log_path: str,
+    weekly_dir: Path,
+    mem_gb: float | None,
+    time_min: float | None,
+    concurrency: int = 1,
 ) -> dict:
     """What every unit in one output directory must share.
 
-    The mode, windows, families, levels and evaluators are part of each unit's key, so
-    one directory can collect several such runs.
+    The inputs and budgets; the code (commit, and a hash of the uncommitted changes),
+    ``uv.lock``, Python and pm4py; the machine; how many units of the campaign run at
+    once; and the guard: ``PMF_GUARD``, the enforcement mechanism and whether it is in
+    force. The mode, windows, families, levels and evaluators are part of each unit's
+    key, so one directory can collect several such runs.
     """
     mem_gb, time_min = resolve_budgets(mem_gb, time_min)
+    enforced = enforcement()
     return {
         "log_sha256": _sha256([Path(log_path)]),
         "models_sha256": _sha256(sorted(weekly_dir.glob("window_*.json"))),
@@ -167,6 +201,14 @@ def evaluation_manifest(
         "time_min": time_min,
         "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
         "mkl_num_threads": os.environ.get("MKL_NUM_THREADS"),
+        **code_fingerprint(PROJECT_ROOT),
+        "uv_lock_sha256": file_sha256(PROJECT_ROOT / "uv.lock"),
+        **versions(),
+        **machine(),
+        "concurrency": concurrency,
+        "pmf_guard": os.environ.get("PMF_GUARD", "1"),
+        "enforcement": enforced.mechanism,
+        "enforcement_in_force": enforced.in_force,
     }
 
 
@@ -201,6 +243,47 @@ def window_bounds(metadata: dict) -> tuple[pd.Timestamp, pd.Timestamp]:
     return start, last_day + pd.Timedelta(days=1) - pd.Timedelta(nanoseconds=1)
 
 
+def _run_unit(
+    fn: Callable[..., dict],
+    args: tuple,
+    kwargs: dict,
+    evaluator: str,
+    model_json: dict,
+    mem_gb: float | None,
+    time_min: float | None,
+) -> tuple[str, dict]:
+    """Run ``fn`` under the guard; return (status, row fields).
+
+    A finished unit is ``ok``, with ``failure_category`` ``empty_model`` if its model
+    accepts nothing, or ``unavailable`` if its main metric (F1, or ER) is missing, with
+    the evaluator's reason.
+    """
+    outcome = run_guarded(fn, *args, mem_gb=mem_gb, time_min=time_min, **kwargs)
+    fields = outcome.row()
+    status = fields.pop("guard_status")
+    if status != "ok":
+        return status, fields
+
+    metrics = dict(outcome.result)
+    category = metrics.pop("failure_category", None)
+    reason = metrics.pop("guard_reason", "")
+    if accepts_nothing(model_json):
+        category, reason = "empty_model", EMPTY_MODEL
+    elif math.isnan(metrics.get("er" if evaluator == "er" else "f1", math.nan)):
+        status = "unavailable"
+        category = category or (
+            "er_automaton_failed" if evaluator == "er" else "precision_failed"
+        )
+    else:
+        category, reason = "", ""
+    return status, {
+        **fields,
+        **metrics,
+        "failure_category": category,
+        "guard_reason": reason,
+    }
+
+
 def _evaluate_cell(
     evaluator: str,
     model_json: dict,
@@ -208,61 +291,54 @@ def _evaluate_cell(
     traces: list,
     consider_remaining: bool,
     reduce_level: str,
-    mem_gb: float,
-    time_min: float,
+    mem_gb: float | None,
+    time_min: float | None,
 ) -> tuple[str, dict]:
-    """Run one guarded unit; return (guard_status, metrics).
+    """Evaluate one unit; return (status, row fields).
 
-    A finished unit on a window with events, whose model accepts nothing, gets
-    ``guard_reason`` :data:`EMPTY_MODEL`.
+    A window without events is ``unavailable`` (``empty_window``) without running.
     """
     has_events = bool(traces) if evaluator == "er" else not event_subset.empty
-    empty_model = (
-        {"guard_reason": EMPTY_MODEL}
-        if has_events and accepts_nothing(model_json)
-        else {}
-    )
+    if not has_events:
+        return "unavailable", {
+            "failure_category": "empty_window",
+            "guard_reason": "no events in the window",
+        }
     if evaluator == "er":
-        status, payload = run_guarded(
-            compute_er,
+        return _run_unit(
+            er_metrics,
+            (model_json, traces),
+            {"partial_trace": True, "reduce_level": reduce_level},
+            evaluator,
             model_json,
-            traces,
-            partial_trace=True,
-            reduce_level=reduce_level,
-            mem_gb=mem_gb,
-            time_min=time_min,
+            mem_gb,
+            time_min,
         )
-        if status == "ok":
-            er, fitting_ratio, _n_traces = payload
-            return status, {"er": er, "fitting_ratio": fitting_ratio, **empty_model}
-        return status, {}
-
     method = "alignment" if evaluator == "alignment" else "token"
     precision_variant = "align_etc" if evaluator == "token_align_etc" else "etc"
-    status, payload = run_guarded(
+    return _run_unit(
         conformance_metrics,
+        (model_json, event_subset),
+        {
+            "consider_remaining": consider_remaining,
+            "method": method,
+            "reduce_level": reduce_level,
+            "precision_variant": precision_variant,
+        },
+        evaluator,
         model_json,
-        event_subset,
-        consider_remaining=consider_remaining,
-        method=method,
-        reduce_level=reduce_level,
-        precision_variant=precision_variant,
-        mem_gb=mem_gb,
-        time_min=time_min,
+        mem_gb,
+        time_min,
     )
-    if status == "ok":
-        return status, {**payload, **empty_model}
-    return status, {}
 
 
 def summarise(results: pd.DataFrame) -> pd.DataFrame:
-    """Mean, std and count of each metric by (mode, evaluator, level, family).
+    """Coverage, mean and std of each metric by (mode, evaluator, level, family).
 
-    A metric's count covers only the units that measured it. ``n_units`` counts every
-    unit, ``n_intractable`` those the guard stopped, ``n_empty_model`` those whose
-    model accepts nothing (scored, with precision and F1 undefined), and
-    ``n_unavailable`` the other finished units without their main metric (ER, or F1,
-    which needs fitness and precision).
+    ``n_<metric>`` counts the units with a finite value of that metric, out of
+    ``n_expected`` units; it is the denominator of that metric's mean. The status
+    counts (``n_ok``, ``n_unavailable``, ``n_timeout``, ...), ``n_over_budget``
+    (``timeout`` and ``oom``) and ``n_empty_model`` are diagnostics.
     """
     keys = ["mode", "evaluator", "reduce_level", "model_type"]
     metric_cols = [
@@ -272,25 +348,41 @@ def summarise(results: pd.DataFrame) -> pd.DataFrame:
         "wall_s",
         "pct_prefix_mass_fit",
         "pct_events_unseen",
+        "memory_peak_gb",
+        "peak_rss_gb",
     ]
-    summary = results.groupby(keys)[metric_cols].agg(["mean", "std", "count"])
-    summary.columns = ["_".join(c) for c in summary.columns]
+    values = results[metric_cols].apply(pd.to_numeric, errors="coerce")
+    by = [results[k] for k in keys]
+    stats = values.groupby(by).agg(["mean", "std"])
+    stats.columns = ["_".join(c) for c in stats.columns]
+    coverage = np.isfinite(values).astype(int).groupby(by).sum().add_prefix("n_")
 
-    finished = results["guard_status"] == "ok"
-    empty_model = finished & (results["guard_reason"] == EMPTY_MODEL)
-    main_metric = results["f1"].where(results["evaluator"] != "er", results["er"])
-    count_cols = ["n_units", "n_intractable", "n_empty_model", "n_unavailable"]
-    counts = (
-        results.assign(
-            n_units=1,
-            n_intractable=~finished,
-            n_empty_model=empty_model,
-            n_unavailable=finished & ~empty_model & main_metric.isna(),
-        )
-        .groupby(keys)[count_cols]
-        .sum()
+    status = results["guard_status"]
+    flags = {
+        "n_expected": pd.Series(1, index=results.index),
+        **{f"n_{s}": status == s for s in GUARD_STATUSES},
+        "n_over_budget": status.isin(OVER_BUDGET),
+        "n_empty_model": (status == "ok") & (results["guard_reason"] == EMPTY_MODEL),
+    }
+    counts = pd.DataFrame(flags).astype(int).groupby(by).sum()
+    ordered = [c for m in metric_cols for c in (f"{m}_mean", f"{m}_std", f"n_{m}")]
+    return counts.join(stats.join(coverage)[ordered]).reset_index()
+
+
+def failure_counts(results: pd.DataFrame) -> pd.DataFrame:
+    """Units per ``failure_category``, by log, mode, evaluator, level and family.
+
+    Every unit without a number has a category, and so does an ``ok`` unit whose model
+    accepts nothing (``empty_model``).
+    """
+    keys = ["dataset", "mode", "evaluator", "reduce_level", "model_type"]
+    flagged = results[results["failure_category"].fillna("") != ""]
+    return (
+        flagged.groupby([*keys, "guard_status", "failure_category"])
+        .size()
+        .rename("n_units")
+        .reset_index()
     )
-    return summary.join(counts).reset_index()
 
 
 def main() -> None:
@@ -338,6 +430,17 @@ def main() -> None:
     parser.add_argument(
         "--time-min", type=float, default=None, help="guard time budget"
     )
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="units of this campaign running at once on this machine (recorded)",
+    )
+    parser.add_argument(
+        "--development",
+        action="store_true",
+        help="allow running without the per-unit cgroup (RLIMIT_AS or time only)",
+    )
     args = parser.parse_args()
     enable_determinism()
 
@@ -347,6 +450,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     res_csv = out_dir / "evaluation.csv"
     summary_csv = out_dir / "evaluation_summary.csv"
+    failures_csv = out_dir / "evaluation_failures.csv"
 
     print("=" * 72)
     print(
@@ -367,9 +471,20 @@ def main() -> None:
     if not window_numbers:
         print(f"No weekly model JSONs found in {weekly_dir}")
         return
-    check_manifest(
-        out_dir, evaluation_manifest(LOG_PATH, weekly_dir, args.mem_gb, args.time_min)
-    )
+    try:
+        manifest = evaluation_manifest(
+            LOG_PATH, weekly_dir, args.mem_gb, args.time_min, args.concurrency
+        )
+    except GuardSetupError as exc:
+        raise SystemExit(f"evaluate.py: {exc}") from exc
+    if manifest["enforcement"] != "cgroup" and not args.development:
+        raise SystemExit(
+            f"evaluate.py: the memory budget would be enforced by "
+            f"{manifest['enforcement']}, not by a per-unit cgroup. Start the run with "
+            "scripts/local/delegated_scope.sh, or pass --development for a run that "
+            "is not part of a campaign."
+        )
+    check_manifest(out_dir, manifest)
 
     # Remaining tokens make a trace imperfect, except in window_no_remain.
     consider_remaining = args.mode != "window_no_remain"
@@ -411,6 +526,12 @@ def main() -> None:
         traces = (
             extract_window_traces(df, start, end) if "er" in args.evaluators else []
         )
+        # What each evaluator scores: ER the window's fragments (without ▶ and ■),
+        # the others the replay mode's events.
+        scored = {
+            "er": (len(traces), sum(len(t) - 2 for t in traces)),
+            "replay": (event_subset["case:concept:name"].nunique(), len(event_subset)),
+        }
 
         print(
             f"  window {window_num}/{window_numbers[-1]}: "
@@ -422,11 +543,13 @@ def main() -> None:
         for model_type, model_json in model_jsons.items():
             for reduce_level in args.reduce_levels:
                 for evaluator in args.evaluators:
+                    mode = ER_MODE if evaluator == "er" else args.mode
+                    n_cases, n_events = scored["er" if evaluator == "er" else "replay"]
                     key = (
                         args.dataset,
                         window_num,
                         model_type,
-                        args.mode,
+                        mode,
                         evaluator,
                         reduce_level,
                     )
@@ -449,14 +572,14 @@ def main() -> None:
                         "dataset": args.dataset,
                         "window": window_num,
                         "model_type": model_type,
-                        "mode": args.mode,
+                        "mode": mode,
                         "evaluator": evaluator,
                         "reduce_level": reduce_level,
-                        "n_events": len(event_subset),
-                        "n_cases": event_subset["case:concept:name"].nunique(),
+                        "n_events": n_events,
+                        "n_cases": n_cases,
+                        **metrics,
                         "guard_status": status,
                         "wall_s": wall_s,
-                        **metrics,
                     }
                     pd.DataFrame([row]).reindex(columns=CSV_COLUMNS).to_csv(
                         res_csv, mode="a", header=not res_csv.exists(), index=False
@@ -470,7 +593,7 @@ def main() -> None:
                         else f"fit={metrics.get('log_fitness', float('nan')):.3f} "
                         f"prec={metrics.get('precision', float('nan')):.3f}"
                         if status == "ok"
-                        else ""
+                        else metrics.get("failure_category", "")
                     )
                     print(
                         f"    {model_type:<10} {reduce_level:<12} {evaluator:<16} "
@@ -484,12 +607,13 @@ def main() -> None:
 
     # Summary over every row in the CSV, including earlier runs.
     results = read_units(res_csv)
-    summarise(results[results["dataset"] == args.dataset]).to_csv(
-        summary_csv, index=False
-    )
+    this_log = results[results["dataset"] == args.dataset]
+    summarise(this_log).to_csv(summary_csv, index=False)
+    failure_counts(this_log).to_csv(failures_csv, index=False)
     print(f"\n{n_cells} cells evaluated this run ({n_skipped} skipped as done).")
     print(f"Per-cell results: {res_csv}")
     print(f"Summary:          {summary_csv}")
+    print(f"Failures:         {failures_csv}")
 
 
 if __name__ == "__main__":

@@ -83,7 +83,7 @@ def _load_evaluate():
     return mod
 
 
-def test_the_summary_counts_measured_unavailable_and_intractable_units() -> None:
+def test_the_summary_counts_measured_unavailable_and_timed_out_units() -> None:
     evaluate = _load_evaluate()
     nan = float("nan")
     base = {
@@ -95,24 +95,24 @@ def test_the_summary_counts_measured_unavailable_and_intractable_units() -> None
     rows = [
         {**base, "window": 1, "evaluator": "er", "guard_status": "ok", "er": 2.0,
          "fitting_ratio": 0.5},
-        {**base, "window": 2, "evaluator": "er", "guard_status": "ok", "er": nan,
-         "fitting_ratio": nan},
+        {**base, "window": 2, "evaluator": "er", "guard_status": "unavailable",
+         "er": nan, "fitting_ratio": nan},
         {**base, "window": 3, "evaluator": "er", "guard_status": "timeout"},
         {**base, "window": 1, "evaluator": "token_etc", "guard_status": "ok",
          "log_fitness": 0.9, "precision": 0.8, "f1": 0.847},
-        {**base, "window": 2, "evaluator": "token_etc", "guard_status": "ok",
+        {**base, "window": 2, "evaluator": "token_etc", "guard_status": "unavailable",
          "log_fitness": 0.9, "precision": nan, "f1": nan},
     ]  # fmt: skip
     results = pd.DataFrame(rows).reindex(columns=evaluate.CSV_COLUMNS)
 
     summary = evaluate.summarise(results).set_index("evaluator")
 
-    assert summary.loc["er", "n_units"] == 3
-    assert summary.loc["er", "n_intractable"] == 1
+    assert summary.loc["er", "n_expected"] == 3
+    assert summary.loc["er", "n_timeout"] == 1
     assert summary.loc["er", "n_unavailable"] == 1
-    assert summary.loc["er", "er_count"] == 1
-    assert summary.loc["er", "fitting_ratio_count"] == 1
+    assert summary.loc["er", "n_er"] == 1
+    assert summary.loc["er", "n_fitting_ratio"] == 1
     assert summary.loc["er", "fitting_ratio_mean"] == 0.5
     assert summary.loc["token_etc", "n_unavailable"] == 1
-    assert summary.loc["token_etc", "f1_count"] == 1
-    assert summary.loc["token_etc", "log_fitness_count"] == 2
+    assert summary.loc["token_etc", "n_f1"] == 1
+    assert summary.loc["token_etc", "n_log_fitness"] == 2

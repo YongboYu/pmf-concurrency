@@ -56,35 +56,33 @@ def _failure(*_args, **_kwargs):
 
 def test_etc_precision(monkeypatch, model, events) -> None:
     monkeypatch.setattr(precision, "etc_precision_with_diagnostics", _out_of_memory)
-    assert run_guarded(conformance_metrics, model, events) == ("oom", None)
+    assert run_guarded(conformance_metrics, model, events).status == "oom"
 
 
 def test_align_etc_precision(monkeypatch, model, events) -> None:
     monkeypatch.setattr(precision_evaluator, "apply", _out_of_memory)
-    status, _ = run_guarded(
+    status = run_guarded(
         conformance_metrics, model, events, precision_variant="align_etc"
-    )
+    ).status
     assert status == "oom"
 
 
 @pytest.mark.parametrize("step", ["fitness_alignments", "precision_alignments"])
 def test_alignments(monkeypatch, model, events, step) -> None:
     monkeypatch.setattr(pm4py, step, _out_of_memory)
-    status, _ = run_guarded(conformance_metrics, model, events, method="alignment")
+    status = run_guarded(conformance_metrics, model, events, method="alignment").status
     assert status == "oom"
 
 
 def test_entropic_relevance(monkeypatch, model) -> None:
     monkeypatch.setattr(entropic_relevance, "petri_net_to_transitions", _out_of_memory)
     traces = [[{"concept:name": a} for a in TRACE]]
-    status, _ = run_guarded(entropic_relevance.compute_er, model, traces)
+    status = run_guarded(entropic_relevance.compute_er, model, traces).status
     assert status == "oom"
 
 
 def test_other_failures_still_give_nan(monkeypatch, model, events) -> None:
     monkeypatch.setattr(pm4py, "fitness_alignments", _failure)
-    status, metrics = run_guarded(
-        conformance_metrics, model, events, method="alignment"
-    )
-    assert status == "ok"
-    assert math.isnan(metrics["log_fitness"])
+    outcome = run_guarded(conformance_metrics, model, events, method="alignment")
+    assert outcome.status == "ok"
+    assert math.isnan(outcome.result["log_fitness"])

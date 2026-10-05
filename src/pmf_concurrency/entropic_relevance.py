@@ -17,6 +17,7 @@ the conversion of a model into a stochastic automaton (SA) differs.
 Public functions:
     petri_net_to_transitions(model_json, partial_trace=True) -> (trans_table, sources)
     compute_er(model_json, traces, partial_trace=True) -> (er, fitting_ratio, n_traces)
+    er_metrics(model_json, traces, partial_trace=True) -> dict, with the failure reason
 """
 
 from __future__ import annotations
@@ -383,12 +384,12 @@ def _run_source(
     return model.compute_relevance(), model
 
 
-def compute_er(
+def er_metrics(
     model_json: dict[str, Any],
     traces: list[list[dict[str, str]]],
     partial_trace: bool = True,
     reduce_level: str = "none",
-) -> tuple[float, float, int]:
+) -> dict[str, Any]:
     """Entropic relevance of a model JSON against a list of traces.
 
     Args:
@@ -402,12 +403,15 @@ def compute_er(
                         :func:`petri_net_to_transitions`).
 
     Returns:
-        ``(er, fitting_ratio, n_traces)``. ER and the fitting ratio are NaN if ER
-        cannot be computed.
+        ``er``, ``fitting_ratio`` and ``n_traces``. ER and the fitting ratio are NaN if
+        ER cannot be computed; then ``failure_category`` is ``er_automaton_failed``
+        and ``guard_reason`` says why.
     """
+    nan = float("nan")
     if not traces:
-        return float("nan"), float("nan"), 0
+        return {"er": nan, "fitting_ratio": nan, "n_traces": 0}
 
+    failed = {"er": nan, "fitting_ratio": nan, "n_traces": len(traces)}
     try:
         trans_table, sources = petri_net_to_transitions(
             model_json, partial_trace=partial_trace, reduce_level=reduce_level
@@ -416,16 +420,35 @@ def compute_er(
         raise  # the budget guard records it as oom
     except Exception as exc:
         logger.warning("ER automaton could not be built: %s", exc)
-        return float("nan"), float("nan"), len(traces)
+        return {
+            **failed,
+            "failure_category": "er_automaton_failed",
+            "guard_reason": repr(exc),
+        }
 
     if not trans_table or not sources:
-        return float("nan"), float("nan"), len(traces)
+        return {
+            **failed,
+            "failure_category": "er_automaton_failed",
+            "guard_reason": "the automaton has no transitions or no source state",
+        }
 
     results = [_run_source(s, trans_table, traces) for s in sources]
     best_er, best_model = min(results, key=lambda x: x[0])
 
     total = best_model.number_of_traces
     non_fit = best_model.total_number_non_fitting_traces
-    fitting_ratio = 1.0 - non_fit / total if total > 0 else float("nan")
+    fitting_ratio = 1.0 - non_fit / total if total > 0 else nan
 
-    return best_er, fitting_ratio, total
+    return {"er": best_er, "fitting_ratio": fitting_ratio, "n_traces": total}
+
+
+def compute_er(
+    model_json: dict[str, Any],
+    traces: list[list[dict[str, str]]],
+    partial_trace: bool = True,
+    reduce_level: str = "none",
+) -> tuple[float, float, int]:
+    """``(er, fitting_ratio, n_traces)`` of :func:`er_metrics`."""
+    m = er_metrics(model_json, traces, partial_trace, reduce_level)
+    return m["er"], m["fitting_ratio"], m["n_traces"]

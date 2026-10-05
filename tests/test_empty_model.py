@@ -6,7 +6,8 @@ accept no trace, and every evaluator scores them alike: fitness 0, no prefix rep
 precision and F1 undefined, ER as computed. The unit is ``ok`` with reason
 ``empty model``, and the summary counts it apart from the units without a result.
 
-A window without events has nothing to score: every metric is NaN.
+A window without events has nothing to score: every metric is NaN, and the unit is
+``unavailable`` with category ``empty_window``.
 """
 
 from __future__ import annotations
@@ -195,6 +196,7 @@ def test_the_unit_is_ok_with_reason_empty_model(evaluator, monkeypatch) -> None:
 
     assert status == "ok"
     assert metrics["guard_reason"] == "empty model"
+    assert metrics["failure_category"] == "empty_model"
 
 
 def test_an_empty_window_is_not_an_empty_model(monkeypatch) -> None:
@@ -205,8 +207,8 @@ def test_an_empty_window_is_not_an_empty_model(monkeypatch) -> None:
         "token_etc", EMPTY, _events([]).iloc[0:0], [], True, "tau", 12.0, 20.0
     )
 
-    assert status == "ok"
-    assert "guard_reason" not in metrics
+    assert status == "unavailable"
+    assert metrics["failure_category"] == "empty_window"
 
 
 def test_the_summary_counts_empty_models_apart() -> None:
@@ -224,7 +226,7 @@ def test_the_summary_counts_empty_models_apart() -> None:
          "precision": 0.8, "f1": 0.847},
         {**base, "window": 2, "guard_status": "ok", "guard_reason": "empty model",
          "log_fitness": 0.0, "precision": nan, "f1": nan},
-        {**base, "window": 3, "guard_status": "ok", "log_fitness": 0.9,
+        {**base, "window": 3, "guard_status": "unavailable", "log_fitness": 0.9,
          "precision": nan, "f1": nan},
         {**base, "window": 4, "guard_status": "timeout"},
     ]  # fmt: skip
@@ -232,10 +234,10 @@ def test_the_summary_counts_empty_models_apart() -> None:
 
     (summary,) = evaluate.summarise(results).to_dict("records")
 
-    assert summary["n_units"] == 4
+    assert summary["n_expected"] == 4
     assert summary["n_empty_model"] == 1
     assert summary["n_unavailable"] == 1
-    assert summary["n_intractable"] == 1
-    assert summary["log_fitness_count"] == 3
+    assert summary["n_timeout"] == 1
+    assert summary["n_log_fitness"] == 3
     assert summary["log_fitness_mean"] == pytest.approx(0.6)
-    assert summary["f1_count"] == 1
+    assert summary["n_f1"] == 1

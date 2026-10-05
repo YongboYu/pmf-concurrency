@@ -17,14 +17,11 @@ Both take the event DataFrame used in :mod:`.conformance`.
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 import pandas as pd
 
 from .petri_net import visible_labels
-
-logger = logging.getLogger(__name__)
 
 
 def prefix_mass(event_df: pd.DataFrame) -> dict[str, float]:
@@ -155,25 +152,19 @@ def align_etc_precision(
 ) -> float:
     """Align-ETC precision, where every prefix counts through its alignment.
 
-    Returns NaN if the net is not easy-sound or the computation fails.
+    Raises pm4py's exception if the net is not easy sound or the computation fails.
     """
     from pm4py.algo.evaluation.precision import algorithm as precision_evaluator
     from pm4py.objects.conversion.log import converter as log_converter
 
     log = log_converter.apply(event_df, variant=log_converter.Variants.TO_EVENT_LOG)
-    try:
-        return float(
-            precision_evaluator.apply(
-                log,
-                net,
-                im,
-                fm,
-                variant=precision_evaluator.Variants.ALIGN_ETCONFORMANCE,
-                parameters={"show_progress_bar": False},
-            )
+    return float(
+        precision_evaluator.apply(
+            log,
+            net,
+            im,
+            fm,
+            variant=precision_evaluator.Variants.ALIGN_ETCONFORMANCE,
+            parameters={"show_progress_bar": False},
         )
-    except MemoryError:
-        raise  # the budget guard records it as oom
-    except Exception as exc:
-        logger.warning("Align-ETC precision failed: %s", exc)
-        return float("nan")
+    )
