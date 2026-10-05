@@ -1,4 +1,4 @@
-"""Chronos-2 forecasts: the pinned revision, the growing context and the median.
+"""Chronos-2 forecasts: the pinned revision, the growing context and the 0.5 level.
 
 Chronos-2 itself is replaced by a stub, so these tests check what the pipeline feeds it
 and what it keeps from its output, not the forecasts.
@@ -38,12 +38,21 @@ def test_chronos_loads_the_papers_revision_once_per_device(monkeypatch) -> None:
     ]
 
 
+#: Chronos-2's quantile levels at the pinned revision.
+LEVELS = [0.01, 0.05, *(round(0.1 + 0.05 * i, 2) for i in range(17)), 0.95, 0.99]
+
+#: Values of the 21 quantile rows, before adding the context length. They are out of
+#: order, so the levels cross: the 0.5 row holds 19, the middle of the sorted rows 10.
+ROWS = torch.randperm(21, generator=torch.Generator().manual_seed(0))
+
+
 class _StubChronos:
     """Returns Chronos-2's output shape, (1 variate, 21 quantiles, horizon).
 
-    The quantile rows are shuffled, and row q holds ``q + len(context)``, so the median
-    over the rows is ``10 + len(context)``.
+    Row j holds ``ROWS[j] + len(context)``.
     """
+
+    quantiles = LEVELS
 
     def __init__(self) -> None:
         self.contexts: list[np.ndarray] = []
@@ -51,8 +60,7 @@ class _StubChronos:
     def predict(self, context: torch.Tensor, prediction_length: int):
         assert context.shape[:2] == (1, 1)
         self.contexts.append(context[0, 0].numpy().copy())
-        rows = torch.randperm(21, generator=torch.Generator().manual_seed(0))
-        levels = rows.to(torch.float32).reshape(1, 21, 1) + context.shape[-1]
+        levels = ROWS.to(torch.float32).reshape(1, 21, 1) + context.shape[-1]
         return [levels.expand(1, 21, prediction_length).clone()]
 
 
@@ -72,10 +80,12 @@ def test_the_context_grows_by_one_observed_day_per_window() -> None:
         np.testing.assert_array_equal(context, np.concatenate([train, test[:i]]))
 
 
-def test_each_window_keeps_the_median_quantile() -> None:
+def test_each_window_keeps_the_0_5_quantile_level_even_when_levels_cross() -> None:
     _stub, _train, _test, rows = _forecast(train_days=12, test_days=5, horizon=2)
 
-    expected = [[10 + 12 + i] * 2 for i in range(4)]
+    assert LEVELS[10] == 0.5
+    assert int(ROWS[10]) == 19  # the sorted middle would be 10
+    expected = [[19 + 12 + i] * 2 for i in range(4)]
     np.testing.assert_array_equal(rows, expected)
 
 
@@ -83,7 +93,7 @@ def test_a_context_shorter_than_ten_days_forecasts_zeros() -> None:
     stub, _train, _test, rows = _forecast(train_days=8, test_days=5, horizon=2)
 
     np.testing.assert_array_equal(rows[:2], 0.0)
-    np.testing.assert_array_equal(rows[2:], [[20, 20], [21, 21]])
+    np.testing.assert_array_equal(rows[2:], [[29, 29], [30, 30]])
     assert [len(c) for c in stub.contexts] == [10, 11]
 
 

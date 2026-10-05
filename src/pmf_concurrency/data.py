@@ -34,6 +34,25 @@ def assert_boundary_markers_present(
         )
 
 
+def sort_events(
+    df: pd.DataFrame,
+    case_key: str = "case:concept:name",
+    timestamp_key: str = "time:timestamp",
+) -> pd.DataFrame:
+    """Events ordered by case and timestamp; ties keep their row order.
+
+    Every step that orders events uses this sort, so events with equal timestamps
+    appear in the same order everywhere. :func:`load_event_log` returns the log in this
+    order, so later sorts of its rows keep the order of the log file.
+    """
+    position = "__row_order__"
+    return (
+        df.assign(**{position: range(len(df))})
+        .sort_values([case_key, timestamp_key, position])
+        .drop(columns=position)
+    )
+
+
 def load_event_log(
     log_path: str,
     activity_key: str = "concept:name",
@@ -41,7 +60,7 @@ def load_event_log(
     case_key: str = "case:concept:name",
     require_markers: bool = True,
 ) -> pd.DataFrame:
-    """Load a XES event log into a DataFrame sorted by case and timestamp.
+    """Load a XES event log into a DataFrame sorted by :func:`sort_events`.
 
     Adds a ``date`` column (the day of each event).
 
@@ -55,7 +74,7 @@ def load_event_log(
     df = pm4py.convert_to_dataframe(log)
 
     df[timestamp_key] = pd.to_datetime(df[timestamp_key])
-    df = df.sort_values([case_key, timestamp_key])
+    df = sort_events(df, case_key, timestamp_key)
     df["date"] = df[timestamp_key].dt.date
 
     if require_markers:
@@ -73,6 +92,9 @@ def split_train_test(
 ) -> tuple[pd.DataFrame, pd.DataFrame, date, date, date]:
     """Split a DataFrame chronologically into train and test sets.
 
+    The cutoff is the day in which ``train_ratio`` of the timeline ends. Training keeps
+    that whole day, as the daily series do, and the test set starts the next day.
+
     Returns:
         (train_df, test_df, train_start, train_end, test_end)
     """
@@ -84,11 +106,12 @@ def split_train_test(
     train_end = training_end_ts.date()
     test_end = max_ts.date()
 
-    train_df = df[df[timestamp_key] < training_end_ts].copy()
-    test_df = df[df[timestamp_key] >= training_end_ts].copy()
+    in_training = df[timestamp_key].dt.date <= train_end
+    train_df = df[in_training].copy()
+    test_df = df[~in_training].copy()
 
     print(f"\nTrain period: {train_start} to {train_end}")
-    print(f"Test period:  {train_end} to {test_end}")
+    print(f"Test period:  after {train_end} to {test_end}")
     print(f"Train events: {len(train_df)}, Test events: {len(test_df)}")
     return train_df, test_df, train_start, train_end, test_end
 
@@ -101,8 +124,9 @@ def extract_traces(
 ) -> list[list[str]]:
     """Extract ordered activity sequences (traces) from a DataFrame."""
     traces = []
-    for _case_id, case_df in df.groupby(case_key):
-        trace = case_df.sort_values(timestamp_key)[activity_key].tolist()
+    ordered = sort_events(df, case_key, timestamp_key)
+    for _case_id, case_df in ordered.groupby(case_key):
+        trace = case_df[activity_key].tolist()
         if trace:
             traces.append(trace)
     return traces
@@ -138,12 +162,10 @@ def slice_log_into_windows(
     all_dates = sorted(df["date"].unique())
 
     case_events: dict[str, list[tuple[str, pd.Timestamp, date]]] = defaultdict(list)
-    for _, row in df.iterrows():
+    for _, row in sort_events(df, case_key, timestamp_key).iterrows():
         case_events[row[case_key]].append(
             (row[activity_key], row[timestamp_key], row["date"])
         )
-    for case_id in case_events:
-        case_events[case_id].sort(key=lambda x: x[1])
 
     windows: dict[date, list[WindowedTrace]] = {}
 

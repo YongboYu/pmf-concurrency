@@ -5,8 +5,10 @@ pm4py's ETC token precision replays every prefix and ignores those that do not f
 precision is then computed on a small subset of the log, and the result does not show
 how small.
 
-* :func:`etc_precision_with_diagnostics`: ETC token precision, equal to
-  pm4py's, plus the share of prefix mass it discards.
+* :func:`etc_precision_with_diagnostics`: ETC token precision, plus the share
+  of prefix mass it discards. A prefix holding an activity the net lacks is discarded
+  too; pm4py's replay would skip that event. Without such activities the value equals
+  pm4py's.
 * :func:`align_etc_precision`: Align-ETC, which aligns every prefix to the
   model. Needs an easy-sound net and returns NaN otherwise.
 
@@ -20,7 +22,22 @@ from typing import Any
 
 import pandas as pd
 
+from .petri_net import visible_labels
+
 logger = logging.getLogger(__name__)
+
+
+def prefix_mass(event_df: pd.DataFrame) -> dict[str, float]:
+    """Distinct non-empty prefixes and their occurrences, as ETC counts them."""
+    from pm4py.algo.evaluation.precision import utils as precision_utils
+    from pm4py.objects.conversion.log import converter as log_converter
+
+    log = log_converter.apply(event_df, variant=log_converter.Variants.TO_EVENT_LOG)
+    prefixes, prefix_count = precision_utils.get_log_prefixes(log)
+    return {
+        "prefix_variants": float(len(prefixes)),
+        "prefix_mass_total": float(sum(prefix_count.values())),
+    }
 
 
 def etc_precision_with_diagnostics(
@@ -31,16 +48,16 @@ def etc_precision_with_diagnostics(
 ) -> dict[str, float]:
     """ETC token precision with prefix-coverage diagnostics.
 
-    Uses the same parameters as pm4py's ``etconformance_token`` and only records which
-    prefixes it discards.
+    Uses the same parameters as pm4py's ``etconformance_token``. A prefix fits if it
+    replays without error and every activity in it labels a transition of the net.
 
     Returns:
         Dict with:
-          * ``precision``: equal to pm4py's ETC value;
+          * ``precision``: ETC over the fitting prefixes;
           * ``prefix_variants``: distinct non-empty prefixes;
           * ``prefix_mass_total``: prefix occurrences in the log;
-          * ``prefix_mass_fit``: occurrences that replay without error, the only
-            ones ETC uses;
+          * ``prefix_mass_fit``: occurrences of fitting prefixes, the only ones ETC
+            uses;
           * ``prefix_mass_unfit``: discarded occurrences;
           * ``pct_prefix_mass_fit``: 100 × fit / total (NaN if empty).
     """
@@ -96,12 +113,14 @@ def etc_precision_with_diagnostics(
     sum_at += n_traces * len(trans_en_ini_marking)
     sum_ee += n_traces * len(diff)
 
+    labels = visible_labels(net)
     mass_total = 0
     mass_fit = 0
     for i in range(len(aligned_traces)):
         occurrences = prefix_count[prefixes_keys[i]]
         mass_total += occurrences
-        if aligned_traces[i]["trace_is_fit"]:
+        known = all(event[activity_key] in labels for event in fake_log[i])
+        if aligned_traces[i]["trace_is_fit"] and known:
             mass_fit += occurrences
             log_transitions = set(prefixes[prefixes_keys[i]])
             activated_transitions_labels = {

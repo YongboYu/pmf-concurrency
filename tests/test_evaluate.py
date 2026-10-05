@@ -204,6 +204,16 @@ def test_reader_rejects_a_unit_recorded_twice(tmp_path):
         _load_evaluate().read_units(csv)
 
 
+def test_resume_refuses_a_csv_with_other_columns(run_evaluate):
+    """Rows appended under an older header would land in the wrong columns."""
+    run_evaluate("--model-types", "static", *_ONE_UNIT)
+    older = pd.read_csv(run_evaluate.res_csv).drop(columns="pct_events_unseen")
+    older.to_csv(run_evaluate.res_csv, index=False)
+
+    with pytest.raises(ValueError, match="pct_events_unseen"):
+        run_evaluate("--model-types", "forecast", "static", *_ONE_UNIT)
+
+
 def test_reader_accepts_distinct_units(tmp_path):
     csv = _write_units(
         tmp_path / "evaluation.csv",

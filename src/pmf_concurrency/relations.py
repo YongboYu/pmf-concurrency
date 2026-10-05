@@ -11,6 +11,8 @@ from datetime import date
 
 import pandas as pd
 
+from .data import sort_events
+
 
 def daily_calendar(dates: Iterable[date]) -> pd.DatetimeIndex:
     """Every day from the first to the last of ``dates``.
@@ -40,10 +42,9 @@ def extract_relation_timeseries(
     relations_AB: list[tuple[date, str]] = []
     relations_ABA: list[tuple[date, str]] = []
 
-    for _case_id, case_df in df.groupby(case_key):
-        events = case_df.sort_values(timestamp_key)[
-            [activity_key, "date"]
-        ].values.tolist()
+    ordered = sort_events(df, case_key, timestamp_key)
+    for _case_id, case_df in ordered.groupby(case_key):
+        events = case_df[[activity_key, "date"]].values.tolist()
 
         for i, (activity, ev_date) in enumerate(events):
             # A: activity occurrence

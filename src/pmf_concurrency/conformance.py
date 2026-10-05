@@ -21,8 +21,8 @@ from typing import Any, Literal
 
 import pandas as pd
 
-from .data import END_SYMBOL, START_SYMBOL
-from .petri_net import json_to_petri_net
+from .data import END_SYMBOL, START_SYMBOL, sort_events
+from .petri_net import accepts_nothing, json_to_petri_net, visible_labels
 from .reduction import ReductionLevel, reduce_net
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,32 @@ def _f1(fitness: float, precision: float) -> float:
     return 0.0
 
 
+def _empty_model_metrics(
+    event_df: pd.DataFrame, precision_variant: PrecisionVariant | None
+) -> dict[str, float]:
+    """Scores of a model that accepts nothing: no trace and no prefix fits, and
+    precision is undefined.
+    """
+    from .precision import prefix_mass
+
+    metrics = {
+        "log_fitness": 0.0,
+        "avg_trace_fitness": 0.0,
+        "perc_fit_traces": 0.0,
+        "precision": float("nan"),
+        "f1": float("nan"),
+    }
+    if precision_variant == "etc":
+        mass = prefix_mass(event_df)
+        metrics |= {
+            **mass,
+            "prefix_mass_fit": 0.0,
+            "prefix_mass_unfit": mass["prefix_mass_total"],
+            "pct_prefix_mass_fit": 0.0 if mass["prefix_mass_total"] else float("nan"),
+        }
+    return metrics
+
+
 def _run_token_replay(
     event_df: pd.DataFrame,
     net: Any,
@@ -58,7 +84,9 @@ def _run_token_replay(
     """Token replay and precision, with an explicit remaining-token flag.
 
     Uses pm4py's low-level API, since the high-level wrapper always sets
-    ``CONSIDER_REMAINING_IN_FITNESS`` to True.
+    ``CONSIDER_REMAINING_IN_FITNESS`` to True. The fitness values are pm4py's, which
+    skip events the net cannot label. A trace counts as fitting only if pm4py finds it
+    fitting and the net labels all its activities.
 
     ``precision_variant``:
       * ``etc``: ETC token precision (equal to pm4py's), plus the share of
@@ -71,6 +99,7 @@ def _run_token_replay(
         Parameters as TRParams,
     )
     from pm4py.algo.evaluation.replay_fitness.variants import token_replay as fit_eval
+    from pm4py.objects.conversion.log import converter as log_converter
 
     from .precision import align_etc_precision, etc_precision_with_diagnostics
 
@@ -79,13 +108,20 @@ def _run_token_replay(
         TRParams.CONSIDER_REMAINING_IN_FITNESS: consider_remaining,
         TRParams.SHOW_PROGRESS_BAR: False,
     }
-    aligned_traces = token_replay.apply(event_df, net, im, fm, parameters=tr_params)
+    log = log_converter.apply(event_df, variant=log_converter.Variants.TO_EVENT_LOG)
+    aligned_traces = token_replay.apply(log, net, im, fm, parameters=tr_params)
     fit_dict = fit_eval.evaluate(aligned_traces)
     fitness_wall_s = time.perf_counter() - t0
 
     log_fitness = float(fit_dict.get("log_fitness", float("nan")))
     avg_trace_fitness = float(fit_dict.get("average_trace_fitness", float("nan")))
-    perc_fit = float(fit_dict.get("perc_fit_traces", float("nan")))
+    labels = visible_labels(net)
+    fitting = [
+        replayed["trace_is_fit"]
+        and all(event["concept:name"] in labels for event in trace)
+        for trace, replayed in zip(log, aligned_traces, strict=True)
+    ]
+    perc_fit = 100.0 * sum(fitting) / len(fitting) if fitting else float("nan")
 
     extras: dict[str, float] = {}
     t0 = time.perf_counter()
@@ -128,7 +164,8 @@ def _run_alignments(
     """Alignment-based fitness and precision through pm4py's high-level API.
 
     Alignments need an easy-sound net. If the net fails that check, the result is NaN
-    and a warning is logged.
+    and a warning is logged. An activity the net lacks is a log move, so its trace
+    never fits.
     """
     import pm4py
 
@@ -190,15 +227,22 @@ def conformance_metrics(
         precision_variant:   ``etc`` (default), ``align_etc`` or ``none``, for
                              token replay. Alignments always use Align-ETC.
 
+    A model that accepts nothing (:func:`.petri_net.accepts_nothing`) is scored
+    without replay: fitness and the fitting shares are 0, precision and F1 NaN. A log
+    without events gives NaN everywhere.
+
     Returns:
         Dict with ``log_fitness``, ``avg_trace_fitness``, ``perc_fit_traces``,
-        ``precision``, ``f1``, wall times per phase and, for reduced nets, the
-        net size before and after reduction.
+        ``precision``, ``f1``, ``pct_events_unseen`` (the share of events whose
+        activity the net lacks), wall times per phase and, for reduced nets, the net
+        size before and after reduction.
     """
     if event_df.empty:
         return _nan_metrics()
 
     net, im, fm = json_to_petri_net(model_json)
+    unseen = ~event_df["concept:name"].isin(visible_labels(net))
+    pct_events_unseen = 100.0 * float(unseen.mean())
 
     extras: dict[str, float] = {}
     if reduce_level != "none":
@@ -208,13 +252,17 @@ def conformance_metrics(
         red_stats.pop("reduction_level", None)
         extras = red_stats
 
-    if method == "alignment":
+    if accepts_nothing(model_json):
+        metrics = _empty_model_metrics(
+            event_df, None if method == "alignment" else precision_variant
+        )
+    elif method == "alignment":
         metrics = _run_alignments(event_df, net, im, fm)
     else:
         metrics = _run_token_replay(
             event_df, net, im, fm, consider_remaining, precision_variant
         )
-    return {**metrics, **extras}
+    return {**metrics, "pct_events_unseen": pct_events_unseen, **extras}
 
 
 def parse_window_date(date_str: str) -> pd.Timestamp:
@@ -253,9 +301,11 @@ def extract_window_traces(
     if event_df.empty:
         return []
 
-    sub = filter_window_events(event_df, start, end)[
-        ["case:concept:name", "concept:name", "time:timestamp"]
-    ].sort_values(["case:concept:name", "time:timestamp"])
+    sub = sort_events(
+        filter_window_events(event_df, start, end)[
+            ["case:concept:name", "concept:name", "time:timestamp"]
+        ]
+    )
     if sub.empty:
         return []
 
@@ -287,6 +337,4 @@ def full_traces_of_active_cases(
     if len(active_cases) == 0:
         return event_df.iloc[0:0].copy()
     keep = event_df["case:concept:name"].isin(active_cases)
-    return (
-        event_df.loc[keep].copy().sort_values(["case:concept:name", "time:timestamp"])
-    )
+    return sort_events(event_df.loc[keep])

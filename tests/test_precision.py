@@ -1,6 +1,8 @@
 """The vendored precision variants.
 
-The vendored ETC token precision must equal pm4py's exactly on the same inputs.
+The vendored ETC token precision must equal pm4py's exactly on the same inputs, unless
+the log holds an activity the net lacks: such prefixes are discarded here, while pm4py
+skips the event and keeps the prefix.
 """
 
 from __future__ import annotations
@@ -48,6 +50,15 @@ MIXED_LOG = _event_df(
     ]
 )
 
+#: MIXED_LOG without the off-model activity.
+TRUNCATED_LOG = _event_df(
+    [
+        ["▶", "a", "b", "c", "■"],
+        ["b", "c", "■"],
+        ["▶", "a", "b"],
+    ]
+)
+
 
 def _pm4py_etc(event_df: pd.DataFrame, net, im, fm) -> float:
     from pm4py.algo.evaluation.precision.variants import etconformance_token
@@ -63,12 +74,21 @@ def test_etc_matches_pm4py_on_fitting_log():
     assert diag["pct_prefix_mass_fit"] == 100.0
 
 
-def test_etc_matches_pm4py_on_mixed_log():
-    for fixture in (LINEAR, AND_SPLIT_JOIN, XOR_CHOICE):
+def test_etc_matches_pm4py_on_truncated_traces():
+    for fixture in (AND_SPLIT_JOIN, XOR_CHOICE):  # LINEAR lacks c
         net, im, fm = json_to_petri_net(fixture)
-        diag = etc_precision_with_diagnostics(MIXED_LOG, net, im, fm)
-        assert diag["precision"] == _pm4py_etc(MIXED_LOG, net, im, fm), fixture
+        diag = etc_precision_with_diagnostics(TRUNCATED_LOG, net, im, fm)
+        assert diag["precision"] == _pm4py_etc(TRUNCATED_LOG, net, im, fm), fixture
         assert diag["prefix_mass_unfit"] > 0.0
+
+
+def test_etc_discards_the_prefixes_pm4py_keeps_past_an_off_model_activity():
+    net, im, fm = json_to_petri_net(AND_SPLIT_JOIN)
+    ours = etc_precision_with_diagnostics(MIXED_LOG, net, im, fm)
+    truncated = etc_precision_with_diagnostics(TRUNCATED_LOG, net, im, fm)
+    # MIXED_LOG has one more prefix, ▶ a x, which pm4py would replay as ▶ a.
+    assert ours["prefix_mass_total"] == truncated["prefix_mass_total"] + 1
+    assert ours["prefix_mass_fit"] == truncated["prefix_mass_fit"]
 
 
 def test_etc_diagnostics_mass_accounting():

@@ -23,6 +23,14 @@ def load_chronos(device: str) -> Chronos2Pipeline:
     )
 
 
+def _median_row(levels: list[float]) -> int:
+    """Index of the 0.5 quantile level among Chronos-2's output rows."""
+    rows = [i for i, level in enumerate(levels) if abs(level - 0.5) < 1e-9]
+    if len(rows) != 1:
+        raise ValueError(f"Chronos-2 quantile levels have no single 0.5: {levels}")
+    return rows[0]
+
+
 def _sliding_forecast(
     pipeline: Chronos2Pipeline,
     train_values: np.ndarray,
@@ -40,6 +48,7 @@ def _sliding_forecast(
 
     # Re-seed per series, so the quantile forecasts do not depend on series order.
     torch.manual_seed(seed)
+    median_row = _median_row(pipeline.quantiles)
 
     forecasts = []
     for seq_idx in range(n_sequences):
@@ -55,9 +64,8 @@ def _sliding_forecast(
         if isinstance(forecast, list):
             forecast = forecast[0]
         # Chronos-2 returns quantiles, not samples: (n_quantiles, horizon) here. The
-        # median over its 21 levels is the 0.5 quantile unless the levels cross.
-        quantiles = forecast[0]
-        forecasts.append(torch.median(quantiles, dim=0).values.cpu().numpy())
+        # point forecast is the 0.5 level, the predictive median.
+        forecasts.append(forecast[0][median_row].cpu().numpy())
 
     return np.array(forecasts)
 

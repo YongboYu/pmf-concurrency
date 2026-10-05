@@ -307,6 +307,36 @@ def json_to_petri_net(model: dict) -> tuple[PetriNet, Marking, Marking]:
     return net, initial_marking, final_marking
 
 
+def accepts_nothing(model: dict[str, Any]) -> bool:
+    """True if the model's WF-net can never reach its final marking.
+
+    That holds when the net has no transitions, lacks an initial or final place, or has
+    no directed path from the initial to the final place: tokens only move along arcs.
+    A Forecast model is like this when no arc, or no arc on the way to ■, clears the
+    dependency threshold.
+    """
+    explicit = causal_net_to_wf_net(model)
+    source, sink = explicit["initial_place"], explicit["final_place"]
+    if not explicit["transitions"] or source is None or sink is None:
+        return True
+    successors: dict[str, list[str]] = defaultdict(list)
+    for arc in explicit["arcs"]:
+        successors[arc["source"]].append(arc["target"])
+    seen = {source}
+    stack = [source]
+    while stack:
+        for node in successors[stack.pop()]:
+            if node not in seen:
+                seen.add(node)
+                stack.append(node)
+    return sink not in seen
+
+
+def visible_labels(net: PetriNet) -> set[str]:
+    """Labels of the net's visible transitions, ▶ and ■ included."""
+    return {t.label for t in net.transitions if t.label is not None}
+
+
 def activity_frequencies(data: dict[str, Any]) -> dict[str, float]:
     """``{activity label: frequency}`` for the activities of a causal-net JSON."""
     freq: dict[str, float] = {}

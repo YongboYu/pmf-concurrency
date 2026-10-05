@@ -61,12 +61,16 @@ from pmf_concurrency.data import load_event_log
 from pmf_concurrency.entropic_relevance import compute_er
 from pmf_concurrency.families import MODEL_FAMILIES, check_families, model_json_path
 from pmf_concurrency.guard import resolve_budgets, run_guarded
+from pmf_concurrency.petri_net import accepts_nothing
 from pmf_concurrency.reduction import REDUCTION_LEVELS
 from pmf_concurrency.reproducibility import enable_determinism
 
 EVALUATORS = ("token_etc", "token_align_etc", "alignment", "er")
 
 MANIFEST_FILENAME = "evaluation_manifest.json"
+
+#: ``guard_reason`` of an ``ok`` unit whose model accepts no trace.
+EMPTY_MODEL = "empty model"
 
 #: Identifies one evaluation unit.
 UNIT_KEY = ("dataset", "window", "model_type", "mode", "evaluator", "reduce_level")
@@ -83,8 +87,10 @@ CSV_COLUMNS = [
     "n_events",
     "n_cases",
     "guard_status",
+    "guard_reason",
     "wall_s",
     *METRIC_KEYS,
+    "pct_events_unseen",
     "fitness_wall_s",
     "precision_wall_s",
     "prefix_variants",
@@ -111,10 +117,17 @@ CSV_COLUMNS = [
 def read_units(path: str | Path) -> pd.DataFrame:
     """Read an ``evaluation.csv``.
 
-    Raises on family names other than the four, and if two rows describe the same unit,
-    which pooling would count twice.
+    Raises if its columns are not :data:`CSV_COLUMNS`, since new rows would not line
+    up with them, on family names other than the four, and if two rows describe the
+    same unit, which pooling would count twice.
     """
     df = pd.read_csv(path)
+    if list(df.columns) != CSV_COLUMNS:
+        changed = sorted(set(df.columns) ^ set(CSV_COLUMNS)) or ["the column order"]
+        raise ValueError(
+            f"{path}: columns differ from this script's ({', '.join(changed)}). "
+            "Evaluate into a new --out-dir."
+        )
     check_families(df["model_type"], str(path))
     duplicated = df.duplicated(subset=list(UNIT_KEY), keep=False)
     if duplicated.any():
@@ -198,7 +211,17 @@ def _evaluate_cell(
     mem_gb: float,
     time_min: float,
 ) -> tuple[str, dict]:
-    """Run one guarded unit; return (guard_status, metrics)."""
+    """Run one guarded unit; return (guard_status, metrics).
+
+    A finished unit on a window with events, whose model accepts nothing, gets
+    ``guard_reason`` :data:`EMPTY_MODEL`.
+    """
+    has_events = bool(traces) if evaluator == "er" else not event_subset.empty
+    empty_model = (
+        {"guard_reason": EMPTY_MODEL}
+        if has_events and accepts_nothing(model_json)
+        else {}
+    )
     if evaluator == "er":
         status, payload = run_guarded(
             compute_er,
@@ -211,7 +234,7 @@ def _evaluate_cell(
         )
         if status == "ok":
             er, fitting_ratio, _n_traces = payload
-            return status, {"er": er, "fitting_ratio": fitting_ratio}
+            return status, {"er": er, "fitting_ratio": fitting_ratio, **empty_model}
         return status, {}
 
     method = "alignment" if evaluator == "alignment" else "token"
@@ -228,7 +251,7 @@ def _evaluate_cell(
         time_min=time_min,
     )
     if status == "ok":
-        return status, payload
+        return status, {**payload, **empty_model}
     return status, {}
 
 
@@ -236,23 +259,35 @@ def summarise(results: pd.DataFrame) -> pd.DataFrame:
     """Mean, std and count of each metric by (mode, evaluator, level, family).
 
     A metric's count covers only the units that measured it. ``n_units`` counts every
-    unit, ``n_intractable`` those the guard stopped, and ``n_unavailable`` those that
-    finished without their main metric (ER, or F1, which needs fitness and precision).
+    unit, ``n_intractable`` those the guard stopped, ``n_empty_model`` those whose
+    model accepts nothing (scored, with precision and F1 undefined), and
+    ``n_unavailable`` the other finished units without their main metric (ER, or F1,
+    which needs fitness and precision).
     """
     keys = ["mode", "evaluator", "reduce_level", "model_type"]
-    metric_cols = [*METRIC_KEYS, "er", "fitting_ratio", "wall_s", "pct_prefix_mass_fit"]
+    metric_cols = [
+        *METRIC_KEYS,
+        "er",
+        "fitting_ratio",
+        "wall_s",
+        "pct_prefix_mass_fit",
+        "pct_events_unseen",
+    ]
     summary = results.groupby(keys)[metric_cols].agg(["mean", "std", "count"])
     summary.columns = ["_".join(c) for c in summary.columns]
 
     finished = results["guard_status"] == "ok"
+    empty_model = finished & (results["guard_reason"] == EMPTY_MODEL)
     main_metric = results["f1"].where(results["evaluator"] != "er", results["er"])
+    count_cols = ["n_units", "n_intractable", "n_empty_model", "n_unavailable"]
     counts = (
         results.assign(
             n_units=1,
             n_intractable=~finished,
-            n_unavailable=finished & main_metric.isna(),
+            n_empty_model=empty_model,
+            n_unavailable=finished & ~empty_model & main_metric.isna(),
         )
-        .groupby(keys)[["n_units", "n_intractable", "n_unavailable"]]
+        .groupby(keys)[count_cols]
         .sum()
     )
     return summary.join(counts).reset_index()

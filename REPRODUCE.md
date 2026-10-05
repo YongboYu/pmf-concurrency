@@ -94,7 +94,10 @@ finishes, so a stopped run resumes where it left off. `evaluation_manifest.json`
 the log, the models, the budgets and the thread counts, and a resume with any of them
 changed stops. A metric that could not be computed is left empty, and
 `evaluation_summary.csv` counts the units without a result (`n_intractable`,
-`n_unavailable`) next to the mean of each metric.
+`n_unavailable`) next to the mean of each metric. A model that accepts no trace is
+scored with fitness 0 and no precision or F1, and counted in `n_empty_model`.
+`pct_events_unseen` is the share of events whose activity the model lacks; such a
+trace never counts as fitting.
 
 To use more cores, run up to four processes at a time, each on its own windows and
 output directory, and concatenate their `evaluation.csv` files afterwards. Four units
