@@ -117,8 +117,17 @@ ENV_NAMES = ("PATH", "LANG", "LC_ALL", "TZ", "USER", "HOSTNAME")
 DATASET_WEIGHT = {"bpi2019": 4, "hospital_billing": 3, "sepsis": 2, "bpi2017": 1}
 EVALUATOR_WEIGHT = {"er": 3, "alignment": 2, "token_align_etc": 1, "token_etc": 1}
 
-#: Memory left to the parents and the system when N units are at their cap, in GiB.
-PARENT_RESERVE_GB = 4.0
+#: Resident memory of an ``evaluate.py`` parent holding each log, in GiB: the largest
+#: ``base_rss_gb`` of campaign 1 on the office box.
+PARENT_RSS_GB = {
+    "bpi2019": 4.53,
+    "hospital_billing": 2.31,
+    "bpi2017": 1.15,
+    "sepsis": 0.79,
+}
+
+#: Memory kept free for the system and the driver, in GiB.
+SYSTEM_RESERVE_GB = 2.0
 
 SAMPLE_EVERY_S = 10.0
 
@@ -295,6 +304,22 @@ def _weekly_dirs(
     return dirs
 
 
+def check_concurrency(
+    datasets: list[str], concurrency: int, mem_gb: float, ram_gb: float
+) -> None:
+    """Stop if ``concurrency`` lanes of the heaviest log, each parent holding the log
+    and its unit at the cap, do not fit in RAM with :data:`SYSTEM_RESERVE_GB` left."""
+    largest = max(PARENT_RSS_GB.values())
+    parent, heaviest = max((PARENT_RSS_GB.get(d, largest), d) for d in datasets)
+    need = concurrency * (parent + mem_gb) + SYSTEM_RESERVE_GB
+    if need > ram_gb:
+        raise SystemExit(
+            f"evaluation_campaign.py: {concurrency} lanes of {heaviest} need "
+            f"{concurrency} x ({parent} GiB parent + {mem_gb} GiB unit) + "
+            f"{SYSTEM_RESERVE_GB} GiB = {need:.1f} GiB, more than {ram_gb} GiB."
+        )
+
+
 def _dirty_code() -> str:
     return subprocess.run(
         [
@@ -448,13 +473,12 @@ def run(args: argparse.Namespace) -> int:
             "evaluation_campaign.py: the code has uncommitted changes, so no commit "
             f"names it:\n{dirty}\nCommit (locally) and start from a clean checkout."
         )
-    mem_gb, _ = resolve_budgets()
-    ram_gb = machine()["ram_gb"]
-    if args.concurrency * mem_gb > float(ram_gb) - PARENT_RESERVE_GB:
-        raise SystemExit(
-            f"evaluation_campaign.py: {args.concurrency} units at {mem_gb} GiB do not "
-            f"fit in {ram_gb} GiB with {PARENT_RESERVE_GB} GiB left for the parents."
-        )
+    check_concurrency(
+        sorted(set(grid["dataset"])),
+        args.concurrency,
+        resolve_budgets()[0],
+        float(machine()["ram_gb"]),
+    )
 
     weekly_dirs = _weekly_dirs(grid, [Path(r).resolve() for r in args.pipeline_roots])
     problems = check_models(grid, weekly_dirs)

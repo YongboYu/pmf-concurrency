@@ -236,3 +236,17 @@ def test_the_summary_counts_expected_units_not_recorded_rows(driver, grid, tmp_p
     assert summary["n_expected"].sum() == len(grid)
     assert "cohort" in summary.columns
     assert "cohort" in pd.read_csv(tmp_path / "near_budget.csv").columns
+
+
+def test_lanes_must_fit_with_their_parents_holding_the_log(driver):
+    """Each parent holds its log before the unit starts; the cap comes on top."""
+    # 3 x (4.53 + 12) + reserve > 46.8 GiB, the office box.
+    with pytest.raises(SystemExit, match="bpi2019"):
+        driver.check_concurrency(["bpi2019", "sepsis"], 3, mem_gb=12.0, ram_gb=46.8)
+    driver.check_concurrency(["bpi2019", "sepsis"], 2, mem_gb=12.0, ram_gb=46.8)
+    driver.check_concurrency(["bpi2017"], 3, mem_gb=12.0, ram_gb=46.8)
+
+
+def test_a_log_without_a_measured_parent_counts_as_the_largest(driver):
+    with pytest.raises(SystemExit):
+        driver.check_concurrency(["new_log"], 3, mem_gb=12.0, ram_gb=46.8)
