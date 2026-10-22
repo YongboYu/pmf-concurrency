@@ -332,6 +332,29 @@ def accepts_nothing(model: dict[str, Any]) -> bool:
     return sink not in seen
 
 
+def unfinishable_places(model: dict[str, Any]) -> int:
+    """Places of the model's WF-net from which no path leads to the final place.
+
+    A backward walk from the final place over the arcs finds every place that can
+    still hand a token on towards it. A token in any other place can never be consumed
+    on the way to the final marking, so a net with such a place is unfinishable. The
+    walk ignores token counts, so it bounds unsoundness from below.
+    """
+    explicit = causal_net_to_wf_net(model)
+    sink = explicit["final_place"]
+    predecessors: dict[str, list[str]] = defaultdict(list)
+    for arc in explicit["arcs"]:
+        predecessors[arc["target"]].append(arc["source"])
+    seen = {sink} if sink is not None else set()
+    stack = list(seen)
+    while stack:
+        for node in predecessors[stack.pop()]:
+            if node not in seen:
+                seen.add(node)
+                stack.append(node)
+    return sum(1 for place in explicit["places"] if place not in seen)
+
+
 def visible_labels(net: PetriNet) -> set[str]:
     """Labels of the net's visible transitions, ▶ and ■ included."""
     return {t.label for t in net.transitions if t.label is not None}
