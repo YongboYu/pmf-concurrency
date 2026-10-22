@@ -16,7 +16,7 @@ import pm4py
 import pytest
 
 from pmf_concurrency import forecasting, history_models, pipeline, weekly_models
-from pmf_concurrency.campaign import check_models, windows_of
+from pmf_concurrency.campaign import check_models, expected_units, windows_of
 from pmf_concurrency.data import load_event_log
 from pmf_concurrency.families import family_from_path, model_json_path
 from pmf_concurrency.paths import OUTPUT_BASE_ENV
@@ -126,12 +126,9 @@ def test_every_window_gets_both_history_nets_the_campaign_check_accepts(
     summary, output_dir = build()
 
     windows = windows_of(load_event_log(str(history_log)), TRAIN_RATIO, HORIZON)
-    expected = pd.concat(
-        windows.assign(dataset="synth", tpat=0.0, model_type=family)
-        for family in ("persistence", "expanding")
-    )
+    grid = expected_units({"synth": windows}, campaign=3)
     weekly = output_dir / "weekly_models"
-    assert check_models(expected, {("synth", 0.0): weekly}) == []
+    assert check_models(grid, {("synth", 0.0): weekly}) == []
 
     assert _window_families(output_dir) == [
         (window, family)

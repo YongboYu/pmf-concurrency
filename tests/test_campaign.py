@@ -119,6 +119,29 @@ def test_campaign_2_is_the_unreduced_grid_plus_the_bpi2017_replay_modes(two_logs
     assert not grid.duplicated(subset=key).any()
 
 
+def test_campaign_3_is_the_history_families_at_tpat_0_on_the_reduced_nets(two_logs):
+    grid = expected_units(two_logs, campaign=3)
+
+    assert list(grid.columns) == list(EXPECTED_COLUMNS)
+    # Windows x 2 history families x 3 evaluators, per log.
+    assert grid.groupby("dataset").size().to_dict() == {
+        "bpi2017": 3 * 2 * 3,
+        "sepsis": 2 * 2 * 3,
+    }
+    assert set(grid["model_type"]) == {"persistence", "expanding"}
+    assert set(grid["tpat"]) == {0.0}
+    assert set(grid["reduce_level"]) == {"tau"}
+    assert set(grid["cohort"]) == {"history"}
+    assert set(grid.loc[grid["evaluator"] == "er", "mode"]) == {"window"}
+    assert set(grid.loc[grid["evaluator"] != "er", "mode"]) == {"case_complete"}
+    sepsis = grid[grid["dataset"] == "sepsis"]
+    assert sorted(set(zip(sepsis["window"], sepsis["start_date"], strict=True))) == [
+        (1, "20210301"),
+        (2, "20210302"),
+    ]
+    assert not grid.duplicated().any()
+
+
 # The model check
 
 

@@ -1,12 +1,14 @@
 """The units an evaluation campaign must record, and the checks of its gate.
 
 The expected units come from the protocol: every log's calendar windows, the Table 2
-arms (all four families at tPAT 0, Forecast and Re-mined at tPAT -1) and the Table 2
-evaluators. They never come from the files on disk, so a model the pipeline failed to
-write, or a unit the evaluation did not record, shows up as missing.
+arms (all four families at tPAT 0, Forecast and Re-mined at tPAT -1) or the history
+arms (Persistence and Expanding at tPAT 0), and the Table 2 evaluators. They never come
+from the files on disk, so a model the pipeline failed to write, or a unit the
+evaluation did not record, shows up as missing.
 
     windows_of       the windows of one log, from its timestamps
-    expected_units   the grid of campaign 1 (reduced nets) or 2 (unreduced, replay modes)
+    expected_units   the grid of campaign 1 (reduced nets), 2 (unreduced, replay modes)
+                     or 3 (history families, reduced nets)
     check_models     every model a unit needs exists, parses and has the grid's dates
     reconcile        recorded units against the grid: missing, duplicated, extra
     near_budget      finished units above 75 % of the time or memory budget
@@ -22,7 +24,7 @@ from pathlib import Path
 import pandas as pd
 
 from .data import split_train_test
-from .families import MODEL_FAMILIES, model_json_path
+from .families import HISTORY_FAMILIES, MODEL_FAMILIES, model_json_path
 
 #: Families evaluated at each tPAT: the mined families do not use the forecasts, so
 #: Table 2 reports them at Fodina's default only.
@@ -30,6 +32,9 @@ TABLE2_ARMS: dict[float, tuple[str, ...]] = {
     0.0: MODEL_FAMILIES,
     -1.0: ("forecast", "re_mined"),
 }
+
+#: Families of campaign 3: the history families are mined, so at Fodina's default only.
+HISTORY_ARMS: dict[float, tuple[str, ...]] = {0.0: HISTORY_FAMILIES}
 
 #: Evaluators of Table 2.
 TABLE2_EVALUATORS = ("token_etc", "alignment", "er")
@@ -59,8 +64,8 @@ UNIT_KEY = (
     "reduce_level",
 )
 
-#: Columns of ``expected_units.csv``. ``cohort`` keeps the replay-mode rows out of
-#: the pooled rates of the base grid.
+#: Columns of ``expected_units.csv``. ``cohort`` keeps the replay-mode and history rows
+#: out of the pooled rates of the base grid.
 EXPECTED_COLUMNS = (*UNIT_KEY, "start_date", "end_date", "cohort")
 
 #: Share of a budget above which a finished unit counts as near it.
@@ -100,6 +105,7 @@ def windows_of(
 def _rows(
     dataset: str,
     windows: pd.DataFrame,
+    arms: dict[float, tuple[str, ...]],
     units: list[tuple[str, str]],
     levels: tuple[str, ...],
     cohort: str,
@@ -117,7 +123,7 @@ def _rows(
             "end_date": w.end_date,
             "cohort": cohort,
         }
-        for tpat, families in TABLE2_ARMS.items()
+        for tpat, families in arms.items()
         for family in families
         for w in windows.itertuples()
         for evaluator, mode in units
@@ -132,26 +138,31 @@ def expected_units(windows: dict[str, pd.DataFrame], campaign: int) -> pd.DataFr
     Table 2 grid on the τ-reduced nets. Campaign 2 is the same grid on the unreduced
     nets (cohort ``table2``) plus the BPI2017 replay-mode comparison (cohort
     ``replay_modes``) at both levels; its ``case_complete`` rows come from the two
-    base grids and are not repeated.
+    base grids and are not repeated. Campaign 3 is the Table 2 evaluators on the
+    history families' τ-reduced nets (cohort ``history``).
     """
     table2 = [(e, ER_MODE if e == "er" else TABLE2_MODE) for e in TABLE2_EVALUATORS]
     rows: list[dict] = []
     if campaign == 1:
         for dataset, w in windows.items():
-            rows += _rows(dataset, w, table2, ("tau",), "table2")
+            rows += _rows(dataset, w, TABLE2_ARMS, table2, ("tau",), "table2")
     elif campaign == 2:
         for dataset, w in windows.items():
-            rows += _rows(dataset, w, table2, ("none",), "table2")
+            rows += _rows(dataset, w, TABLE2_ARMS, table2, ("none",), "table2")
         if REPLAY_MODE_DATASET in windows:
             rows += _rows(
                 REPLAY_MODE_DATASET,
                 windows[REPLAY_MODE_DATASET],
+                TABLE2_ARMS,
                 list(REPLAY_MODE_UNITS),
                 ("tau", "none"),
                 "replay_modes",
             )
+    elif campaign == 3:
+        for dataset, w in windows.items():
+            rows += _rows(dataset, w, HISTORY_ARMS, table2, ("tau",), "history")
     else:
-        raise ValueError(f"campaign must be 1 or 2, not {campaign}")
+        raise ValueError(f"campaign must be 1, 2 or 3, not {campaign}")
     return pd.DataFrame(rows, columns=list(EXPECTED_COLUMNS))
 
 

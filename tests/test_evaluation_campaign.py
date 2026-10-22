@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from pmf_concurrency.campaign import expected_units
+from pmf_concurrency.campaign import expected_units, read_expected
 
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 if str(SCRIPTS) not in sys.path:
@@ -42,6 +42,37 @@ def grid() -> pd.DataFrame:
         }
     )
     return expected_units({"bpi2017": windows, "bpi2019": windows}, campaign=1)
+
+
+def test_the_grid_command_writes_campaign_3_once(driver, monkeypatch, tmp_path):
+    # Two events 50 days apart stand in for the log. Writing an XES file with pm4py
+    # would leave a child process running, which test_guard.py then finds.
+    events = pd.DataFrame(
+        {
+            "case:concept:name": ["c1", "c2"],
+            "concept:name": ["A", "B"],
+            "time:timestamp": pd.to_datetime(["2021-01-01", "2021-02-20"]),
+        }
+    )
+    monkeypatch.setattr(
+        driver, "resolve_dataset", lambda key: (f"{key}.xes", tmp_path / key, None)
+    )
+    monkeypatch.setattr(driver, "load_event_log", lambda _path: events)
+    out = tmp_path / "c3" / "expected_units.csv"
+    argv = ["grid", "--campaign", "3", "--out", str(out), "--datasets", "sepsis"]
+    monkeypatch.setattr(sys, "argv", ["evaluation_campaign.py", *argv])
+
+    assert driver.main() == 0
+    grid = read_expected(out)
+    # 50 days at the configured 80 % and 7-day horizon leave 4 windows.
+    assert len(grid) == 4 * 2 * 3
+    assert set(grid["model_type"]) == {"persistence", "expanding"}
+    assert set(grid["cohort"]) == {"history"}
+
+    written = out.read_bytes()
+    with pytest.raises(SystemExit, match="written once"):
+        driver.main()
+    assert out.read_bytes() == written
 
 
 def test_one_batch_per_log_tpat_family_evaluator_mode_and_level(driver, grid):
