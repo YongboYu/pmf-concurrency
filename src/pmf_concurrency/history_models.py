@@ -1,8 +1,11 @@
 """The history models of every evaluation window, built apart from the pipeline.
 
-    expanding  Fodina on every event from the log's first day to the day before the
-               window, cut by date as the training log is, so open cases contribute
-               their prefixes
+    persistence  Fodina on the events of the horizon days before the window, cut by
+                 date as a Direct-mined window is, so from window horizon + 1 on it
+                 is the Direct-mined net of the window one horizon earlier
+    expanding    Fodina on every event from the log's first day to the day before the
+                 window, cut by date as the training log is, so open cases contribute
+                 their prefixes
 
 The models go to a root of their own with a pipeline run's layout: the models in
 ``weekly_models/``, ``structural_metrics.csv`` and ``experiment_summary.json``. The
@@ -110,7 +113,8 @@ def build_history_models(
         output_dir:  Directory for all outputs, ``<Name>_pmf``.
         train_ratio: Share of the timeline used for training.
         tD, tL1L, tL2L, tPAT: Fodina thresholds.
-        horizon:     Window length in days.
+        horizon:     Window length in days, and the length of the Persistence
+                     history.
 
     Returns:
         The run summary, as written to ``experiment_summary.json``.
@@ -142,20 +146,25 @@ def build_history_models(
             "start_date": w.start_date,
             "end_date": w.end_date,
         }
-        last = (
-            pd.to_datetime(w.start_date, format="%Y%m%d") - pd.Timedelta(days=1)
-        ).date()
-        built = _mine_history(
-            log.events, log.train_start, last, "expanding", window_meta, thresholds
-        )
-        if built is not None:
+        start = pd.to_datetime(w.start_date, format="%Y%m%d")
+        day_before = (start - pd.Timedelta(days=1)).date()
+        histories = {
+            "persistence": ((start - pd.Timedelta(days=horizon)).date(), day_before),
+            "expanding": (log.train_start, day_before),
+        }
+        for family, (first, last) in histories.items():
+            built = _mine_history(
+                log.events, first, last, family, window_meta, thresholds
+            )
+            if built is None:
+                continue
             model_json, stats = built
             rows.append(
                 structural_metrics_row(
-                    window, "expanding", stats, dataset=dataset, tPAT=tPAT
+                    window, family, stats, dataset=dataset, tPAT=tPAT
                 )
             )
-            save_model(weekly_dir, window, "expanding", model_json)
+            save_model(weekly_dir, window, family, model_json)
         # Rewritten after every window, so a run that stops early keeps its rows.
         write_structural_metrics(output_dir, rows)
 
