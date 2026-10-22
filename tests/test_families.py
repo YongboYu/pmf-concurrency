@@ -6,8 +6,9 @@ import pandas as pd
 import pytest
 
 from pmf_concurrency.families import (
+    ALL_FAMILIES,
     FAMILY_LABELS,
-    MODEL_FAMILIES,
+    check_families,
     family_from_path,
     model_json_path,
 )
@@ -18,7 +19,15 @@ from pmf_concurrency.structural_metrics import (
 
 
 def test_every_family_has_a_label():
-    assert set(FAMILY_LABELS) == set(MODEL_FAMILIES)
+    assert set(FAMILY_LABELS) == set(ALL_FAMILIES)
+    assert FAMILY_LABELS["persistence"] == "Persistence"
+    assert FAMILY_LABELS["expanding"] == "Expanding"
+
+
+def test_the_history_families_are_known_and_other_names_are_not():
+    check_families(["static", "persistence", "expanding"], "test")
+    with pytest.raises(ValueError, match="naive"):
+        check_families(["persistence", "naive"], "test")
 
 
 def test_family_from_path_keeps_underscored_names_whole():

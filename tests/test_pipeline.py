@@ -28,7 +28,10 @@ from pmf_concurrency import (
 from pmf_concurrency.paths import OUTPUT_BASE_ENV
 from pmf_concurrency.structural_metrics import (
     STRUCTURAL_METRICS_FILENAME,
+    StructuralStats,
     read_structural_metrics,
+    structural_metrics_row,
+    write_structural_metrics,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -324,6 +327,26 @@ def test_median_choice_counts_what_the_point_forecast_changes(
 
 def _relation_keys(output_dir: Path) -> list[str]:
     return pd.read_csv(output_dir / "forecast_AB_summary.csv")["series_key"].tolist()
+
+
+def test_the_summary_lists_the_history_families_a_run_holds(tmp_path) -> None:
+    stats = StructuralStats(
+        tasks=3,
+        arcs=2,
+        input_bindings=2,
+        input_and_bindings=0,
+        output_bindings=2,
+        output_and_bindings=1,
+    )
+    rows = [
+        structural_metrics_row(1, family, stats, dataset="Synth", tPAT=0.0)
+        for family in ("expanding", "persistence")
+    ]
+    write_structural_metrics(str(tmp_path), rows)
+
+    summary = pipeline.write_summary(str(tmp_path), {}, {"tPAT": 0.0})
+
+    assert summary["structural_metrics"]["families"] == ["persistence", "expanding"]
 
 
 def test_tpat_on_the_command_line_reaches_the_pipeline(monkeypatch) -> None:

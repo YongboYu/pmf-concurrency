@@ -15,12 +15,12 @@ from pandas.testing import assert_frame_equal
 
 from pmf_concurrency.causal_net import mine_fodina
 from pmf_concurrency.data import END_SYMBOL, START_SYMBOL
+from pmf_concurrency.families import MODEL_FAMILIES
 from pmf_concurrency.reconstruction import (
     apply_binding_filter,
     build_causal_net_from_forecast,
 )
 from pmf_concurrency.structural_metrics import (
-    MODEL_FAMILIES,
     STRUCTURAL_METRICS_COLUMNS,
     STRUCTURAL_METRICS_FILENAME,
     STRUCTURAL_METRICS_KEY,
@@ -561,12 +561,31 @@ def test_duplicate_window_and_family_is_rejected() -> None:
 
 
 def test_model_family_keeps_the_declared_order_not_the_alphabet() -> None:
-    """Rows follow the MODEL_FAMILIES order, not alphabetical order."""
+    """Rows follow the paper's family order, not alphabetical order."""
     frame = structural_metrics_frame(_rows())
 
     families = list(frame.loc[frame["window"] == 1, "model_family"])
     assert families == [f for f in MODEL_FAMILIES if f in families]
     assert families[0] == "forecast"
+
+
+def test_the_history_families_keep_their_names_and_sort_last(tmp_path) -> None:
+    _, _, _, stats = _reconstruct(tPAT=0.0)
+    rows = [
+        _row(1, "expanding", stats),
+        _row(1, "persistence", stats),
+        _row(1, "static", stats),
+        _row(1, "forecast", stats),
+    ]
+    path = write_structural_metrics(str(tmp_path), rows)
+
+    for frame in (structural_metrics_frame(rows), read_structural_metrics(path)):
+        assert list(frame["model_family"].astype(str)) == [
+            "forecast",
+            "static",
+            "persistence",
+            "expanding",
+        ]
 
 
 def test_tpat_round_trips_through_the_csv(tmp_path) -> None:

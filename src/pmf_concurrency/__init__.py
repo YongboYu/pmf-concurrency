@@ -18,7 +18,7 @@ Modules, in the order the pipeline uses them:
     entropic_relevance  entropic relevance
     reduction           language-preserving τ-reduction
     guard               memory and time budget per evaluation unit
-    families            the four model families
+    families            the model families and their names
     paths               where a run's outputs go
     reproducibility     seeds and deterministic ordering
     fodina              the Fodina miner

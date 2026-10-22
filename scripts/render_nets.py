@@ -51,7 +51,12 @@ from typing import Any
 
 import pandas as pd
 
-from pmf_concurrency.families import FAMILY_LABELS, MODEL_FAMILIES, model_json_path
+from pmf_concurrency.families import (
+    ALL_FAMILIES,
+    FAMILY_LABELS,
+    MODEL_FAMILIES,
+    model_json_path,
+)
 from pmf_concurrency.paths import OUTPUT_DIR_SUFFIX, dataset_name_from_output_dir
 from pmf_concurrency.petri_net import _as_float, causal_net_to_wf_net, json_to_petri_net
 from pmf_concurrency.reduction import reduce_tau_series
@@ -455,7 +460,7 @@ def main() -> None:
     ap.add_argument("--out-dir", required=True, help="directory the drawings go to")
     ap.add_argument("--datasets", nargs="+", help="log names; default every <Log>_pmf")
     ap.add_argument(
-        "--families", nargs="+", default=list(MODEL_FAMILIES), choices=MODEL_FAMILIES
+        "--families", nargs="+", default=list(MODEL_FAMILIES), choices=ALL_FAMILIES
     )
     ap.add_argument("--windows", nargs="+", type=int, help="default every window")
     ap.add_argument(

@@ -84,7 +84,12 @@ from pmf_concurrency.conformance import (
 )
 from pmf_concurrency.data import load_event_log
 from pmf_concurrency.entropic_relevance import er_metrics
-from pmf_concurrency.families import MODEL_FAMILIES, check_families, model_json_path
+from pmf_concurrency.families import (
+    ALL_FAMILIES,
+    MODEL_FAMILIES,
+    check_families,
+    model_json_path,
+)
 from pmf_concurrency.guard import (
     GUARD_STATUSES,
     OUTCOME_COLUMNS,
@@ -151,8 +156,8 @@ def read_units(path: str | Path) -> pd.DataFrame:
     """Read an ``evaluation.csv``.
 
     Raises if its columns are not :data:`CSV_COLUMNS`, since new rows would not line
-    up with them, on family names other than the four, and if two rows describe the
-    same unit, which pooling would count twice.
+    up with them, on unknown family names, and if two rows describe the same unit,
+    which pooling would count twice.
     """
     df = pd.read_csv(path)
     if list(df.columns) != CSV_COLUMNS:
@@ -416,7 +421,7 @@ def main() -> None:
         help="restrict to these window numbers (default: all)",
     )
     parser.add_argument(
-        "--model-types", nargs="+", default=list(MODEL_FAMILIES), choices=MODEL_FAMILIES
+        "--model-types", nargs="+", default=list(MODEL_FAMILIES), choices=ALL_FAMILIES
     )
     parser.add_argument(
         "--evaluators", nargs="+", default=list(EVALUATORS), choices=EVALUATORS

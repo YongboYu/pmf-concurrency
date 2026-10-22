@@ -151,6 +151,37 @@ def test_models_are_drawn_and_an_empty_one_is_only_indexed(tmp_path, monkeypatch
 
 
 @needs_dot
+def test_the_history_families_are_drawn_when_asked(tmp_path, monkeypatch):
+    mod = _load()
+    base = _campaign(
+        tmp_path,
+        {
+            "window_1_persistence.json": _loop_model(),
+            "window_1_expanding.json": _loop_model(),
+        },
+    )
+    out = tmp_path / "out"
+    _run(
+        mod,
+        monkeypatch,
+        "--output-base",
+        str(base),
+        "--out-dir",
+        str(out),
+        "--families",
+        "persistence",
+        "expanding",
+        "--jobs",
+        "1",
+    )
+
+    index = pd.read_csv(out / "Toy" / "index.csv")
+    assert sorted(index["family"]) == ["expanding", "persistence"]
+    for family in ("persistence", "expanding"):
+        assert (out / "Toy" / family / "window_1-expanded.svg").is_file()
+
+
+@needs_dot
 def test_a_selection_of_only_empty_models_still_writes_the_index(tmp_path, monkeypatch):
     mod = _load()
     base = _campaign(tmp_path, {"window_2_forecast.json": _empty_model(2)})

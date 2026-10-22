@@ -1,8 +1,8 @@
 """scripts/evaluate.py: resuming a run and reading its units back.
 
 A resumed run skips the units already recorded, but only if the log, the models and the
-budgets are the ones the run started with. A unit recorded twice, or a family name
-other than the four, stops the reader rather than being pooled.
+budgets are the ones the run started with. A unit recorded twice, or an unknown family
+name, stops the reader rather than being pooled.
 """
 
 from __future__ import annotations
@@ -53,6 +53,12 @@ def _write_units(path: Path, units: list[dict]) -> Path:
     return path
 
 
+def _write_model(weekly: Path, family: str) -> None:
+    """Window 1's model of a family, dated 2021-03-01 to 2021-03-07."""
+    meta = {"start_date": "20210301", "end_date": "20210307", "type": family}
+    (weekly / f"window_1_{family}.json").write_text(json.dumps({"metadata": meta}))
+
+
 @pytest.fixture
 def run_evaluate(tmp_path, monkeypatch):
     """Run the script's ``main`` on one window with a stub evaluator.
@@ -67,8 +73,7 @@ def run_evaluate(tmp_path, monkeypatch):
         json.dumps({"thresholds": {"tPAT": -1.0}})
     )
     for family in ("forecast", "static"):
-        meta = {"start_date": "20210301", "end_date": "20210307", "type": family}
-        (weekly / f"window_1_{family}.json").write_text(json.dumps({"metadata": meta}))
+        _write_model(weekly, family)
     out = tmp_path / "out"
     log = tmp_path / "log.xes"
     log.write_text("log")
@@ -369,6 +374,23 @@ def test_a_run_that_evaluates_nothing_says_so(run_evaluate, capsys):
     run_evaluate("--model-types", "direct_mined")
 
     assert "No units evaluated." in capsys.readouterr().out
+
+
+def test_the_history_families_are_evaluated_when_asked(run_evaluate):
+    for family in ("persistence", "expanding"):
+        _write_model(run_evaluate.weekly, family)
+
+    evaluated = run_evaluate("--model-types", "persistence", "expanding", *_ONE_UNIT)
+
+    assert evaluated == ["persistence", "expanding"]
+    recorded = _load_evaluate().read_units(run_evaluate.res_csv)
+    assert sorted(recorded["model_type"]) == ["expanding", "persistence"]
+
+
+def test_by_default_only_the_table_2_families_are_evaluated(run_evaluate):
+    _write_model(run_evaluate.weekly, "expanding")
+
+    assert run_evaluate(*_ONE_UNIT) == ["forecast", "static"]
 
 
 def test_resume_rejects_unknown_families(run_evaluate):

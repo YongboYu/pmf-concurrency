@@ -36,7 +36,7 @@ from .data import (
     slice_log_into_windows,
     split_train_test,
 )
-from .families import MODEL_FAMILIES
+from .families import ALL_FAMILIES
 from .forecasting import chronos_sliding_forecast
 from .paths import dataset_output_dir
 from .relations import extract_relation_timeseries
@@ -205,7 +205,7 @@ def write_summary(
             "rows": len(metrics),
             # int(): nunique returns numpy int64, which json.dump cannot encode.
             "windows": int(metrics["window"].nunique()),
-            "families": [f for f in MODEL_FAMILIES if f in present],
+            "families": [f for f in ALL_FAMILIES if f in present],
         },
     }
     with open(os.path.join(output_dir, "experiment_summary.json"), "w") as fh:

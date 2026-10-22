@@ -32,7 +32,7 @@ from typing import Any
 
 import pandas as pd
 
-from .families import MODEL_FAMILIES, check_families
+from .families import ALL_FAMILIES, check_families
 from .fodina import PatternMiner
 
 #: One file per campaign output directory.
@@ -221,7 +221,7 @@ def _with_declared_dtypes(frame: pd.DataFrame) -> pd.DataFrame:
     out["dataset"] = out["dataset"].astype("string")
     # Ordered categorical, so families sort in paper order, not alphabetically.
     out["model_family"] = pd.Categorical(
-        out["model_family"], categories=list(MODEL_FAMILIES), ordered=True
+        out["model_family"], categories=list(ALL_FAMILIES), ordered=True
     )
     return out
 
@@ -281,7 +281,7 @@ def read_structural_metrics(path: str) -> pd.DataFrame:
     """Read a structural-metrics CSV and check its columns.
 
     Restores the nullable integer dtypes, so unmeasured counters stay missing, and
-    raises on family names other than the four.
+    raises on unknown family names.
     """
     raw = pd.read_csv(path)
     missing = [c for c in STRUCTURAL_METRICS_COLUMNS if c not in raw.columns]

@@ -100,7 +100,8 @@ def _rebuilt_model(
     return model_json, stats
 
 
-def _save(weekly_dir: Path, window: int, family: str, model_json: dict) -> None:
+def save_model(weekly_dir: Path, window: int, family: str, model_json: dict) -> None:
+    """Save a window's model as ``window_<n>_<family>.json`` and draw it as a PDF."""
     path = model_json_path(weekly_dir, window, family)
     with open(path, "w") as fh:
         json.dump(model_json, fh, indent=2)
@@ -173,7 +174,7 @@ def build_weekly_models(
             metadata = {"type": f"sliding_{family}", **window_meta}
             model_json, stats = _rebuilt_model(counts, metadata, thresholds)
             record(window, family, stats)
-            _save(weekly_dir, window, family, model_json)
+            save_model(weekly_dir, window, family, model_json)
 
         if test_df is not None:
             window_df = test_df[test_df["date"].isin({d.date() for d in span})]
@@ -200,7 +201,7 @@ def build_weekly_models(
                             "method": "fodina_original",
                             "traces": len(traces),
                         }
-                        _save(
+                        save_model(
                             weekly_dir,
                             window,
                             "direct_mined",
@@ -223,7 +224,7 @@ def build_weekly_models(
                     "training_traces": training.get("traces", 0),
                 }
                 model_json = {"metadata": metadata, "graph": static.model_json["graph"]}
-                _save(weekly_dir, window, "static", model_json)
+                save_model(weekly_dir, window, "static", model_json)
             except Exception as e:
                 print(f"    Warning: Static model for window {window} failed: {e}")
             # The Static model does not depend on the window, so its row is recorded
