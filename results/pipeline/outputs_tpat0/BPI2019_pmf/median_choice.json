@@ -1,0 +1,14 @@
+{
+  "run": "outputs_tpat0/BPI2019_pmf",
+  "tPAT": 0.0,
+  "n_values": 254100,
+  "n_values_differ": 32271,
+  "n_weekly_counts": 36300,
+  "n_weekly_counts_differ": 16556,
+  "max_weekly_relative_change": 110.04329681396484,
+  "n_weekly_counts_enter_or_leave": 43,
+  "n_windows": 55,
+  "n_nets_topology_differ": 3,
+  "n_nets_frequencies_differ": 49,
+  "n_nets_not_reproduced": 0
+}

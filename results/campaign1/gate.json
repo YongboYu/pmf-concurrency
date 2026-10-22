@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "n_expected": 6066,
+  "n_recorded": 6066,
+  "units": {
+    "missing": 0,
+    "duplicated": 0,
+    "extra": 0
+  },
+  "status_counts": {
+    "ok": 5512,
+    "unavailable": 8,
+    "timeout": 34,
+    "oom": 512
+  },
+  "manifest_problems": [],
+  "oom": {
+    "global_rise": 1024,
+    "unit_kills": 1024,
+    "unattributed": 0,
+    "host_oom_units": 0
+  },
+  "near_budget": {
+    "n_finished": 5520,
+    "n_over_75pct_time": 1,
+    "n_over_75pct_memory": 1,
+    "n_near_budget": 1
+  }
+}

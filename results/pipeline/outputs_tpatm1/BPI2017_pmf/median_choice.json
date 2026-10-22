@@ -1,0 +1,14 @@
+{
+  "run": "outputs_tpatm1/BPI2017_pmf",
+  "tPAT": -1.0,
+  "n_values": 33292,
+  "n_values_differ": 3434,
+  "n_weekly_counts": 4756,
+  "n_weekly_counts_differ": 1215,
+  "max_weekly_relative_change": 86.62416076660156,
+  "n_weekly_counts_enter_or_leave": 8,
+  "n_windows": 58,
+  "n_nets_topology_differ": 0,
+  "n_nets_frequencies_differ": 4,
+  "n_nets_not_reproduced": 0
+}

@@ -1,0 +1,742 @@
+{
+  "metadata": {
+    "type": "sliding_forecast",
+    "dataset": "BPI2017",
+    "window": 1,
+    "seq_start": 0,
+    "seq_end": 7,
+    "start_date": "20161022",
+    "end_date": "20161028"
+  },
+  "graph": {
+    "directed": true,
+    "nodes": [
+      {
+        "id": "O_Accepted",
+        "data": {
+          "label": "O_Accepted",
+          "is_binding": false,
+          "frequency": 242.50445556640625
+        }
+      },
+      {
+        "id": "O_Cancelled",
+        "data": {
+          "label": "O_Cancelled",
+          "is_binding": false,
+          "frequency": 443.65484619140625
+        }
+      },
+      {
+        "id": "O_Create Offer",
+        "data": {
+          "label": "O_Create Offer",
+          "is_binding": false,
+          "frequency": 904.6643676757812
+        }
+      },
+      {
+        "id": "O_Created",
+        "data": {
+          "label": "O_Created",
+          "is_binding": false,
+          "frequency": 904.6643676757812
+        }
+      },
+      {
+        "id": "O_Refused",
+        "data": {
+          "label": "O_Refused",
+          "is_binding": false,
+          "frequency": 110.92173767089844
+        }
+      },
+      {
+        "id": "O_Returned",
+        "data": {
+          "label": "O_Returned",
+          "is_binding": false,
+          "frequency": 497.94793701171875
+        }
+      },
+      {
+        "id": "O_Sent (mail and online)",
+        "data": {
+          "label": "O_Sent (mail and online)",
+          "is_binding": false,
+          "frequency": 828.6107177734375
+        }
+      },
+      {
+        "id": "O_Sent (online only)",
+        "data": {
+          "label": "O_Sent (online only)",
+          "is_binding": false,
+          "frequency": 42.6936149597168
+        }
+      },
+      {
+        "id": "i_O_Cancelled_0",
+        "data": {
+          "label": "i_O_Cancelled_0",
+          "is_binding": true,
+          "ib_frequency": 23.006237030029297,
+          "ob_frequency": 23.006237030029297,
+          "frequency": 23.006237030029297,
+          "ab_frequency": 23.147388458251953
+        }
+      },
+      {
+        "id": "i_O_Cancelled_2",
+        "data": {
+          "label": "i_O_Cancelled_2",
+          "is_binding": true,
+          "ib_frequency": 185.3272705078125,
+          "ob_frequency": 185.3272705078125,
+          "frequency": 185.3272705078125,
+          "ab_frequency": 349.76202392578125
+        }
+      },
+      {
+        "id": "i_O_Cancelled_3",
+        "data": {
+          "label": "i_O_Cancelled_3",
+          "is_binding": true,
+          "ib_frequency": 13.973320960998535,
+          "ob_frequency": 13.973320960998535,
+          "frequency": 13.973320960998535,
+          "ab_frequency": 13.880191802978516
+        }
+      },
+      {
+        "id": "i_O_Refused_1",
+        "data": {
+          "label": "i_O_Refused_1",
+          "is_binding": true,
+          "ib_frequency": 5.150423049926758,
+          "ob_frequency": 5.150423049926758,
+          "frequency": 5.150423049926758,
+          "ab_frequency": 18.760324478149414
+        }
+      },
+      {
+        "id": "i_O_Returned_0",
+        "data": {
+          "label": "i_O_Returned_0",
+          "is_binding": true,
+          "ib_frequency": 210.84857177734375,
+          "ob_frequency": 268.41265869140625,
+          "frequency": 210.84857177734375,
+          "ab_frequency": 462.042236328125
+        }
+      },
+      {
+        "id": "i_O_Returned_1",
+        "data": {
+          "label": "i_O_Returned_1",
+          "is_binding": true,
+          "ib_frequency": 20.938629150390625,
+          "ob_frequency": 20.8039608001709,
+          "frequency": 20.938629150390625,
+          "ab_frequency": 20.903297424316406
+        }
+      },
+      {
+        "id": "i_O_Sent (mail and online)_0",
+        "data": {
+          "label": "i_O_Sent (mail and online)_0",
+          "is_binding": true,
+          "ib_frequency": 828.7327270507812,
+          "ob_frequency": 823.7279663085938,
+          "frequency": 828.7327270507812,
+          "ab_frequency": 828.7327270507812
+        }
+      },
+      {
+        "id": "o_O_Accepted_0",
+        "data": {
+          "label": "o_O_Accepted_0",
+          "is_binding": true,
+          "ib_frequency": 242.50445556640625,
+          "ob_frequency": 242.50445556640625,
+          "frequency": 242.50445556640625,
+          "ab_frequency": 242.50445556640625
+        }
+      },
+      {
+        "id": "o_O_Cancelled_0",
+        "data": {
+          "label": "o_O_Cancelled_0",
+          "is_binding": true,
+          "ib_frequency": 443.65484619140625,
+          "ob_frequency": 443.65484619140625,
+          "frequency": 443.65484619140625,
+          "ab_frequency": 443.65484619140625
+        }
+      },
+      {
+        "id": "o_O_Create Offer_0",
+        "data": {
+          "label": "o_O_Create Offer_0",
+          "is_binding": true,
+          "ib_frequency": 904.6643676757812,
+          "ob_frequency": 904.6643676757812,
+          "frequency": 904.6643676757812,
+          "ab_frequency": 904.6643676757812
+        }
+      },
+      {
+        "id": "o_O_Created_1",
+        "data": {
+          "label": "o_O_Created_1",
+          "is_binding": true,
+          "ob_frequency": 0.42613685131073,
+          "frequency": 0.42613685131073,
+          "ab_frequency": 851.8801155090332
+        }
+      },
+      {
+        "id": "o_O_Created_3",
+        "data": {
+          "label": "o_O_Created_3",
+          "is_binding": true,
+          "ib_frequency": 42.70050811767578,
+          "ob_frequency": 42.70050811767578,
+          "frequency": 42.70050811767578,
+          "ab_frequency": 42.70050811767578
+        }
+      },
+      {
+        "id": "o_O_Refused_0",
+        "data": {
+          "label": "o_O_Refused_0",
+          "is_binding": true,
+          "ib_frequency": 110.92173767089844,
+          "ob_frequency": 110.92173767089844,
+          "frequency": 110.92173767089844,
+          "ab_frequency": 110.92173767089844
+        }
+      },
+      {
+        "id": "o_O_Returned_0",
+        "data": {
+          "label": "o_O_Returned_0",
+          "is_binding": true,
+          "ib_frequency": 223.99014355801046,
+          "ob_frequency": 224.97230529785156,
+          "frequency": 223.99014355801046,
+          "ab_frequency": 216.7883758544922
+        }
+      },
+      {
+        "id": "o_O_Returned_1",
+        "data": {
+          "label": "o_O_Returned_1",
+          "is_binding": true,
+          "ib_frequency": 45.22673034667969,
+          "ob_frequency": 45.22673034667969,
+          "frequency": 45.22673034667969,
+          "ab_frequency": 47.89863586425781
+        }
+      },
+      {
+        "id": "o_O_Returned_2",
+        "data": {
+          "label": "o_O_Returned_2",
+          "is_binding": true,
+          "ib_frequency": 80.83102416992188,
+          "ob_frequency": 80.83102416992188,
+          "frequency": 80.83102416992188,
+          "ab_frequency": 84.41950225830078
+        }
+      },
+      {
+        "id": "o_O_Sent (mail and online)_1",
+        "data": {
+          "label": "o_O_Sent (mail and online)_1",
+          "is_binding": true,
+          "ob_frequency": 0.03396239131689072,
+          "frequency": 0.03396239131689072,
+          "ab_frequency": 811.8042602539062
+        }
+      },
+      {
+        "id": "o_O_Sent (mail and online)_3",
+        "data": {
+          "label": "o_O_Sent (mail and online)_3",
+          "is_binding": true,
+          "ob_frequency": 0.047471001744270325,
+          "frequency": 0.047471001744270325,
+          "ab_frequency": 480.8025608062744
+        }
+      },
+      {
+        "id": "o_O_Sent (online only)_1",
+        "data": {
+          "label": "o_O_Sent (online only)_1",
+          "is_binding": true,
+          "ob_frequency": 0.0007992892060428858,
+          "frequency": 0.0007992892060428858,
+          "ab_frequency": 34.78348922729492
+        }
+      },
+      {
+        "id": "o_\u25b6_0",
+        "data": {
+          "label": "o_\u25b6_0",
+          "is_binding": true,
+          "ib_frequency": 904.6643676757812,
+          "ob_frequency": 904.5422985118348,
+          "frequency": 904.6643676757812,
+          "ab_frequency": 904.6643676757812
+        }
+      },
+      {
+        "id": "\u25a0",
+        "data": {
+          "label": "\u25a0",
+          "is_binding": false,
+          "frequency": 828.6898193359375
+        }
+      },
+      {
+        "id": "\u25b6",
+        "data": {
+          "label": "\u25b6",
+          "is_binding": false,
+          "frequency": 904.6643676757812
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "O_Accepted",
+        "target": "o_O_Accepted_0",
+        "data": {
+          "ib_frequency": 242.50445556640625,
+          "ob_frequency": 242.50445556640625,
+          "frequency": 242.50445556640625,
+          "ab_frequency": 242.50445556640625
+        }
+      },
+      {
+        "source": "O_Cancelled",
+        "target": "o_O_Cancelled_0",
+        "data": {
+          "ib_frequency": 443.65484619140625,
+          "ob_frequency": 443.65484619140625,
+          "frequency": 443.65484619140625,
+          "ab_frequency": 443.65484619140625
+        }
+      },
+      {
+        "source": "O_Create Offer",
+        "target": "o_O_Create Offer_0",
+        "data": {
+          "ib_frequency": 904.6643676757812,
+          "ob_frequency": 904.6643676757812,
+          "frequency": 904.6643676757812,
+          "ab_frequency": 904.6643676757812
+        }
+      },
+      {
+        "source": "O_Created",
+        "target": "i_O_Cancelled_0",
+        "data": {
+          "ib_frequency": 23.006237030029297,
+          "ob_frequency": 23.006237030029297,
+          "frequency": 23.006237030029297,
+          "ab_frequency": 23.147388458251953
+        }
+      },
+      {
+        "source": "O_Created",
+        "target": "i_O_Sent (mail and online)_0",
+        "data": {
+          "ib_frequency": 828.7327270507812,
+          "ob_frequency": 823.7279663085938,
+          "frequency": 828.7327270507812,
+          "ab_frequency": 828.7327270507812
+        }
+      },
+      {
+        "source": "O_Created",
+        "target": "o_O_Created_1",
+        "data": {
+          "ob_frequency": 0.42613685131073,
+          "frequency": 0.42613685131073,
+          "ab_frequency": 851.8801155090332
+        }
+      },
+      {
+        "source": "O_Created",
+        "target": "o_O_Created_3",
+        "data": {
+          "ib_frequency": 42.70050811767578,
+          "ob_frequency": 42.70050811767578,
+          "frequency": 42.70050811767578,
+          "ab_frequency": 42.70050811767578
+        }
+      },
+      {
+        "source": "O_Refused",
+        "target": "o_O_Refused_0",
+        "data": {
+          "ib_frequency": 110.92173767089844,
+          "ob_frequency": 110.92173767089844,
+          "frequency": 110.92173767089844,
+          "ab_frequency": 110.92173767089844
+        }
+      },
+      {
+        "source": "O_Returned",
+        "target": "o_O_Returned_0",
+        "data": {
+          "ib_frequency": 223.99014355801046,
+          "ob_frequency": 224.97230529785156,
+          "frequency": 223.99014355801046,
+          "ab_frequency": 216.7883758544922
+        }
+      },
+      {
+        "source": "O_Returned",
+        "target": "o_O_Returned_1",
+        "data": {
+          "ib_frequency": 45.22673034667969,
+          "ob_frequency": 45.22673034667969,
+          "frequency": 45.22673034667969,
+          "ab_frequency": 47.89863586425781
+        }
+      },
+      {
+        "source": "O_Returned",
+        "target": "o_O_Returned_2",
+        "data": {
+          "ib_frequency": 80.83102416992188,
+          "ob_frequency": 80.83102416992188,
+          "frequency": 80.83102416992188,
+          "ab_frequency": 84.41950225830078
+        }
+      },
+      {
+        "source": "O_Sent (mail and online)",
+        "target": "i_O_Cancelled_2",
+        "data": {
+          "ib_frequency": 185.3272705078125,
+          "ob_frequency": 185.3272705078125,
+          "frequency": 185.3272705078125,
+          "ab_frequency": 349.76202392578125
+        }
+      },
+      {
+        "source": "O_Sent (mail and online)",
+        "target": "i_O_Refused_1",
+        "data": {
+          "ib_frequency": 5.150423049926758,
+          "ob_frequency": 5.150423049926758,
+          "frequency": 5.150423049926758,
+          "ab_frequency": 18.760324478149414
+        }
+      },
+      {
+        "source": "O_Sent (mail and online)",
+        "target": "i_O_Returned_0",
+        "data": {
+          "ib_frequency": 210.84857177734375,
+          "ob_frequency": 268.41265869140625,
+          "frequency": 210.84857177734375,
+          "ab_frequency": 462.042236328125
+        }
+      },
+      {
+        "source": "O_Sent (mail and online)",
+        "target": "o_O_Sent (mail and online)_1",
+        "data": {
+          "ob_frequency": 0.03396239131689072,
+          "frequency": 0.03396239131689072,
+          "ab_frequency": 811.8042602539062
+        }
+      },
+      {
+        "source": "O_Sent (mail and online)",
+        "target": "o_O_Sent (mail and online)_3",
+        "data": {
+          "ob_frequency": 0.047471001744270325,
+          "frequency": 0.047471001744270325,
+          "ab_frequency": 480.8025608062744
+        }
+      },
+      {
+        "source": "O_Sent (online only)",
+        "target": "i_O_Cancelled_3",
+        "data": {
+          "ib_frequency": 13.973320960998535,
+          "ob_frequency": 13.973320960998535,
+          "frequency": 13.973320960998535,
+          "ab_frequency": 13.880191802978516
+        }
+      },
+      {
+        "source": "O_Sent (online only)",
+        "target": "i_O_Returned_1",
+        "data": {
+          "ib_frequency": 20.938629150390625,
+          "ob_frequency": 20.8039608001709,
+          "frequency": 20.938629150390625,
+          "ab_frequency": 20.903297424316406
+        }
+      },
+      {
+        "source": "O_Sent (online only)",
+        "target": "o_O_Sent (online only)_1",
+        "data": {
+          "ob_frequency": 0.0007992892060428858,
+          "frequency": 0.0007992892060428858,
+          "ab_frequency": 34.78348922729492
+        }
+      },
+      {
+        "source": "i_O_Cancelled_0",
+        "target": "O_Cancelled",
+        "data": {
+          "ib_frequency": 23.006237030029297,
+          "ob_frequency": 23.006237030029297,
+          "frequency": 23.006237030029297,
+          "ab_frequency": 23.147388458251953
+        }
+      },
+      {
+        "source": "i_O_Cancelled_2",
+        "target": "O_Cancelled",
+        "data": {
+          "ib_frequency": 185.3272705078125,
+          "ob_frequency": 185.3272705078125,
+          "frequency": 185.3272705078125,
+          "ab_frequency": 349.76202392578125
+        }
+      },
+      {
+        "source": "i_O_Cancelled_3",
+        "target": "O_Cancelled",
+        "data": {
+          "ib_frequency": 13.973320960998535,
+          "ob_frequency": 13.973320960998535,
+          "frequency": 13.973320960998535,
+          "ab_frequency": 13.880191802978516
+        }
+      },
+      {
+        "source": "i_O_Refused_1",
+        "target": "O_Refused",
+        "data": {
+          "ib_frequency": 5.150423049926758,
+          "ob_frequency": 5.150423049926758,
+          "frequency": 5.150423049926758,
+          "ab_frequency": 18.760324478149414
+        }
+      },
+      {
+        "source": "i_O_Returned_0",
+        "target": "O_Returned",
+        "data": {
+          "ib_frequency": 210.84857177734375,
+          "ob_frequency": 268.41265869140625,
+          "frequency": 210.84857177734375,
+          "ab_frequency": 462.042236328125
+        }
+      },
+      {
+        "source": "i_O_Returned_1",
+        "target": "O_Returned",
+        "data": {
+          "ib_frequency": 20.938629150390625,
+          "ob_frequency": 20.8039608001709,
+          "frequency": 20.938629150390625,
+          "ab_frequency": 20.903297424316406
+        }
+      },
+      {
+        "source": "i_O_Sent (mail and online)_0",
+        "target": "O_Sent (mail and online)",
+        "data": {
+          "ib_frequency": 828.7327270507812,
+          "ob_frequency": 823.7279663085938,
+          "frequency": 828.7327270507812,
+          "ab_frequency": 828.7327270507812
+        }
+      },
+      {
+        "source": "o_O_Accepted_0",
+        "target": "\u25a0",
+        "data": {
+          "ib_frequency": 242.50445556640625,
+          "ob_frequency": 242.50445556640625,
+          "frequency": 242.50445556640625,
+          "ab_frequency": 242.50445556640625
+        }
+      },
+      {
+        "source": "o_O_Cancelled_0",
+        "target": "\u25a0",
+        "data": {
+          "ib_frequency": 443.65484619140625,
+          "ob_frequency": 443.65484619140625,
+          "frequency": 443.65484619140625,
+          "ab_frequency": 443.65484619140625
+        }
+      },
+      {
+        "source": "o_O_Create Offer_0",
+        "target": "O_Created",
+        "data": {
+          "ib_frequency": 904.6643676757812,
+          "ob_frequency": 904.6643676757812,
+          "frequency": 904.6643676757812,
+          "ab_frequency": 904.6643676757812
+        }
+      },
+      {
+        "source": "o_O_Created_1",
+        "target": "i_O_Cancelled_0",
+        "data": {
+          "ob_frequency": 0.42613685131073,
+          "frequency": 0.42613685131073,
+          "ab_frequency": 23.147388458251953
+        }
+      },
+      {
+        "source": "o_O_Created_1",
+        "target": "i_O_Sent (mail and online)_0",
+        "data": {
+          "ob_frequency": 0.42613685131073,
+          "frequency": 0.42613685131073,
+          "ab_frequency": 828.7327270507812
+        }
+      },
+      {
+        "source": "o_O_Created_3",
+        "target": "O_Sent (online only)",
+        "data": {
+          "ib_frequency": 42.70050811767578,
+          "ob_frequency": 42.70050811767578,
+          "frequency": 42.70050811767578,
+          "ab_frequency": 42.70050811767578
+        }
+      },
+      {
+        "source": "o_O_Refused_0",
+        "target": "\u25a0",
+        "data": {
+          "ib_frequency": 110.92173767089844,
+          "ob_frequency": 110.92173767089844,
+          "frequency": 110.92173767089844,
+          "ab_frequency": 110.92173767089844
+        }
+      },
+      {
+        "source": "o_O_Returned_0",
+        "target": "O_Accepted",
+        "data": {
+          "ib_frequency": 223.99014355801046,
+          "ob_frequency": 224.97230529785156,
+          "frequency": 223.99014355801046,
+          "ab_frequency": 216.7883758544922
+        }
+      },
+      {
+        "source": "o_O_Returned_1",
+        "target": "O_Cancelled",
+        "data": {
+          "ib_frequency": 45.22673034667969,
+          "ob_frequency": 45.22673034667969,
+          "frequency": 45.22673034667969,
+          "ab_frequency": 47.89863586425781
+        }
+      },
+      {
+        "source": "o_O_Returned_2",
+        "target": "O_Refused",
+        "data": {
+          "ib_frequency": 80.83102416992188,
+          "ob_frequency": 80.83102416992188,
+          "frequency": 80.83102416992188,
+          "ab_frequency": 84.41950225830078
+        }
+      },
+      {
+        "source": "o_O_Sent (mail and online)_1",
+        "target": "i_O_Cancelled_2",
+        "data": {
+          "ob_frequency": 0.03396239131689072,
+          "frequency": 0.03396239131689072,
+          "ab_frequency": 349.76202392578125
+        }
+      },
+      {
+        "source": "o_O_Sent (mail and online)_1",
+        "target": "i_O_Returned_0",
+        "data": {
+          "ob_frequency": 0.03396239131689072,
+          "frequency": 0.03396239131689072,
+          "ab_frequency": 462.042236328125
+        }
+      },
+      {
+        "source": "o_O_Sent (mail and online)_3",
+        "target": "i_O_Refused_1",
+        "data": {
+          "ob_frequency": 0.047471001744270325,
+          "frequency": 0.047471001744270325,
+          "ab_frequency": 18.760324478149414
+        }
+      },
+      {
+        "source": "o_O_Sent (mail and online)_3",
+        "target": "i_O_Returned_0",
+        "data": {
+          "ob_frequency": 0.047471001744270325,
+          "frequency": 0.047471001744270325,
+          "ab_frequency": 462.042236328125
+        }
+      },
+      {
+        "source": "o_O_Sent (online only)_1",
+        "target": "i_O_Cancelled_3",
+        "data": {
+          "ob_frequency": 0.0007992892060428858,
+          "frequency": 0.0007992892060428858,
+          "ab_frequency": 13.880191802978516
+        }
+      },
+      {
+        "source": "o_O_Sent (online only)_1",
+        "target": "i_O_Returned_1",
+        "data": {
+          "ob_frequency": 0.0007992892060428858,
+          "frequency": 0.0007992892060428858,
+          "ab_frequency": 20.903297424316406
+        }
+      },
+      {
+        "source": "o_\u25b6_0",
+        "target": "O_Create Offer",
+        "data": {
+          "ib_frequency": 904.6643676757812,
+          "ob_frequency": 904.5422985118348,
+          "frequency": 904.6643676757812,
+          "ab_frequency": 904.6643676757812
+        }
+      },
+      {
+        "source": "\u25b6",
+        "target": "o_\u25b6_0",
+        "data": {
+          "ib_frequency": 904.6643676757812,
+          "ob_frequency": 904.5422985118348,
+          "frequency": 904.6643676757812,
+          "ab_frequency": 904.6643676757812
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "train_period": {
+    "start": "2016-02-10",
+    "end": "2016-10-21"
+  },
+  "test_period": {
+    "start": "2016-10-22",
+    "end": "2016-12-24"
+  },
+  "test_days": 64,
+  "thresholds": {
+    "tD": 0.5,
+    "tL1L": 0.5,
+    "tL2L": 0.5,
+    "tPAT": -1.0
+  },
+  "structural_metrics": {
+    "path": "outputs_tpatm1/BPI2017_pmf/structural_metrics.csv",
+    "rows": 232,
+    "windows": 58,
+    "families": [
+      "forecast",
+      "re_mined",
+      "direct_mined",
+      "static"
+    ]
+  }
+}

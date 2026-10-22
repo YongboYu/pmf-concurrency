@@ -1,0 +1,177 @@
+note: 'Written by scripts/paper.py collect. Do not edit: collect again.'
+created_utc: '2026-10-15T09:25:39Z'
+collected_by_commit: 635a5b29dadf68b2b8dc5112859b3f960c1c2294
+campaigns:
+  reduced:
+    dir: campaign1
+    git_commit: 94c447f76b7da7f9501850cfb538c3735edc9ad6
+    host: HP-Z4-G4-LNX
+    cpu: Intel(R) Xeon(R) W-2245 CPU @ 3.90GHz
+    ram_gb: 46.8
+    os: Linux-6.8.0-124-generic-x86_64-with-glibc2.35
+    python: 3.12.12
+    pm4py: 2.7.19.8
+    concurrency: 2
+    mem_gb: 12.0
+    time_min: 20.0
+    omp_num_threads: '8'
+    mkl_num_threads: '8'
+    gate_passed: true
+    n_units: 6066
+    status_counts:
+      ok: 5512
+      unavailable: 8
+      timeout: 34
+      oom: 512
+  unreduced:
+    dir: campaign2
+    git_commit: 635a5b29dadf68b2b8dc5112859b3f960c1c2294
+    host: HP-Z4-G4-LNX
+    cpu: Intel(R) Xeon(R) W-2245 CPU @ 3.90GHz
+    ram_gb: 46.8
+    os: Linux-6.8.0-124-generic-x86_64-with-glibc2.35
+    python: 3.12.12
+    pm4py: 2.7.19.8
+    concurrency: 2
+    mem_gb: 12.0
+    time_min: 20.0
+    omp_num_threads: '8'
+    mkl_num_threads: '8'
+    gate_passed: true
+    n_units: 8154
+    status_counts:
+      ok: 7532
+      unavailable: 8
+      timeout: 287
+      oom: 327
+pipeline:
+  '-1.0':
+    dir: pipeline/outputs_tpatm1
+    tpat: -1.0
+    git_commit: 94c447f76b7da7f9501850cfb538c3735edc9ad6
+    host: HP-Z4-G4-LNX
+    device: cuda
+    gpu: NVIDIA RTX A6000
+    models_sha256:
+      bpi2017: 0e710389a065b86c1fab613984234d3d4af6e2abc0c86db3392c92554df7795a
+      bpi2019: ae718dbb0a8ac83dcd7e06f47ae08584b370e7e351d9a03c91af15cf7d8a6e65
+      sepsis: e99c57e75b3c91973ae691f92070b464ce2a1d94e4fac7d64c69cbc2025efc36
+      hospital_billing: 3f30a4438126dcf48666144973eaa134f742c79bcddc8df67ae3908ff85c23fc
+  '+0.0':
+    dir: pipeline/outputs_tpat0
+    tpat: 0.0
+    git_commit: 94c447f76b7da7f9501850cfb538c3735edc9ad6
+    host: HP-Z4-G4-LNX
+    device: cuda
+    gpu: NVIDIA RTX A6000
+    models_sha256:
+      bpi2017: 2b67d23322a3186f97d0aef4a374d29027157394232f138ef7fa3edea1e75440
+      bpi2019: 96dd118494dd66f0a9f5feb88c5ae873bbe9d7c5a6270f3114b7829a9e31fae0
+      sepsis: 66cd3a85f70a3e9b3e8a76e5e0cab9590b18556fe0fa9c9b5262d962bed74698
+      hospital_billing: 3667617a5164b827d27517c0de5d84056ab7ce43914e2949104f279d27c20377
+logs:
+  bpi2017:
+    file: BPI2017.xes
+    log_sha256: 41a1fe0c4e825d11d8861d0f152c1f22d6be9e8a6f281233d2543d8e4b0ce72a
+  bpi2019:
+    file: BPI2019_1.xes
+    log_sha256: 9e2ff9ea7a53b69c7b4df6b82533e7acb21cdab298da6864c68f2a6b29fb109e
+  sepsis:
+    file: Sepsis.xes
+    log_sha256: e9c4e2b981c8cbfe458555e094d2c3e502785dcb38242a9a45cf8f6a96b9fe6a
+  hospital_billing:
+    file: Hospital_Billing.xes
+    log_sha256: d9aacd418288e2e56a3d5a07edfa87b868a116d23b886f4ecf150aa30a54898c
+figure2:
+  file: figure2/window_1_forecast.json
+  dataset: bpi2017
+  tpat: -1.0
+  window: 1
+  model_type: forecast
+files:
+  campaign1/batches.csv: 4f3ec8a93f52fb046abea7c4036fc2d09b919c985993930f8747e89cc811091f
+  campaign1/campaign_manifest.json: 4ea5ca2ac4194f237ba2e7adc9a809e98bbd6006ae7782e2b40fa6c8c543d9d4
+  campaign1/environment.json: c7459925a0962f144ca359b77a6068133b452f826d2b50230424e6a3e9f8eec0
+  campaign1/evaluation.csv: 4e5e9ed4b7c8d3d3e9883da49a732cde89f96a9bea5de4d3842f6afb2ca162f9
+  campaign1/evaluation_failures.csv: b4c3bf26724f5a12c851fde8f3977452120b996e02dfaa47b46b727ab21e449c
+  campaign1/evaluation_summary.csv: a6da8d87649b4d1eb9a5b871e427a05306f5be74e8d63e6a299eba9a5f8375c0
+  campaign1/expected_units.csv: f676edd1ea09b4c9410f00d68d6123eefdb169015df3044b40fe6bbf00aa8da4
+  campaign1/gate.json: 7fb2d4596eb0be3c164144014411b62eb633610f6123d5a29883969c29e456a4
+  campaign1/near_budget.csv: 1c02e5c170f00151fa55fde4945b0d1605f64eb42419bc83c1ea194e5769a817
+  campaign2/batches.csv: b0447c52fe65cd8859750bead0795f5c0da024aedc4ec39e49ceccf36bd1de01
+  campaign2/campaign_manifest.json: 2f1bdcc54ca2fdef034227b12d21570dd810aa4656ff9580638dcb7e07cf314f
+  campaign2/environment.json: c7459925a0962f144ca359b77a6068133b452f826d2b50230424e6a3e9f8eec0
+  campaign2/evaluation.csv: 47bbe060993e164adbf655c0b8b18d09ab24734157a9a13c0c30b915c55b0f8c
+  campaign2/evaluation_failures.csv: 327406807595575aace0a3040f15465fb569a93420a9d4af720e8f6c4b8128e5
+  campaign2/evaluation_summary.csv: cfd2c2ff6460451a6904de2090fe7bfcb547825c2b03e8343c463f1d0d7b50f0
+  campaign2/expected_units.csv: a81feb8e9e7ae85890c7d4ecc6effa1d19a628a2ebbbdbcfafc2bc8dbd2546c8
+  campaign2/gate.json: 9b2257056763a343985905a8233d35c9efd5c1fcf8f0caae9989953f772e86c9
+  campaign2/near_budget.csv: fd11b924663c2bd6b95399a5a65e9c9974fe626e4892116554f84e40150caf89
+  figure2/window_1_forecast.json: 54b7e3bf26bf5efe80c12d2702034091566a608bbf10e9dfcf60fa46a85c0ae3
+  logs.csv: 34b97196e06d17341f1f7eb8009eb06e8aec157ba0020bab0418a81c999aae83
+  pipeline/outputs_tpat0/BPI2017_pmf/experiment_summary.json: 6ec0d28e94895d63ac28148316dcf2bbeb55f335fa76f1f6e041794ab0b2b60f
+  pipeline/outputs_tpat0/BPI2017_pmf/forecast_AB_summary.csv: de82491f7fe5d3bea8e86f541f3fd5d3f0d464192a70109a90346676b429b4d4
+  pipeline/outputs_tpat0/BPI2017_pmf/forecast_A_summary.csv: 6f327c21d3862f960d54bfa56f498d7d007bd20881de82c04016c7b2d3ecf8f6
+  pipeline/outputs_tpat0/BPI2017_pmf/forecast_IB_summary.csv: 6e6089cacafc127961b8460ebdfb0f48a92515dc0d00d896dec7b0801dbe2173
+  pipeline/outputs_tpat0/BPI2017_pmf/forecast_OB_summary.csv: 52fed99d2739085e640296d64a72a3871aa0ab4ba149f08a6581facd965b2af7
+  pipeline/outputs_tpat0/BPI2017_pmf/median_choice.json: 1b96a32fd5c7ad94d2195a6fbc5c441818263397aa668f662e406471d3346cc9
+  pipeline/outputs_tpat0/BPI2017_pmf/structural_metrics.csv: d6aa2e10e11fef0e747af30d2c4dbdd4987da81459221dd5a68e9b75b9b02b3c
+  pipeline/outputs_tpat0/BPI2019_pmf/experiment_summary.json: caa16c5aec098183791b88929aac21ba39641603de504cb29753e0da51cb9b27
+  pipeline/outputs_tpat0/BPI2019_pmf/forecast_ABA_summary.csv: 31b39f01abacd59dc4c4b9ed531cda4bb8118503c3fc4665862a1305ba77a3fc
+  pipeline/outputs_tpat0/BPI2019_pmf/forecast_AB_summary.csv: fba26debbe6ee34b7792edc5bac4dae3369183af11af154c3bf3df96a3d3684f
+  pipeline/outputs_tpat0/BPI2019_pmf/forecast_A_summary.csv: 885c515bbbe8615bca35af525be67c2b9a8337a6325eb4ecca5c5889d9f6e8e7
+  pipeline/outputs_tpat0/BPI2019_pmf/forecast_IB_summary.csv: f2ac864605e4ccc34061cea32e455044c40cee60135208af0a28250c2f43766e
+  pipeline/outputs_tpat0/BPI2019_pmf/forecast_OB_summary.csv: adac442e66ff35e5d23fbcbf26db7c1d6aa2d48cad5446e8cd239a0fee9a59d3
+  pipeline/outputs_tpat0/BPI2019_pmf/median_choice.json: 7e3e80d71ec5c9a9ff1c45aa69378368da58189bcabc7505f88e33be7f94a397
+  pipeline/outputs_tpat0/BPI2019_pmf/structural_metrics.csv: 265855a4c2bcccfbdc0f3a8ed4a83e0f7a85af53ff8eab6e9f5c619e521dc986
+  pipeline/outputs_tpat0/Hospital_Billing_pmf/experiment_summary.json: fb40e2c4fcd3b8729f36c1fcbb35c5a7d8c6a6eca1892d36b54df332529bae64
+  pipeline/outputs_tpat0/Hospital_Billing_pmf/forecast_ABA_summary.csv: b0efa579c47ceb51b428ce7ecc8800e206709eed88ee883c59375ab2e327a043
+  pipeline/outputs_tpat0/Hospital_Billing_pmf/forecast_AB_summary.csv: 4e6a9b2405d4fec747c5ceaa7a285e6d15087fd2616a86a8905747a6255f51be
+  pipeline/outputs_tpat0/Hospital_Billing_pmf/forecast_A_summary.csv: e805284fb620d706894c9e38af72b0116c1f7e5e094cd9143bebb88324ec8a2e
+  pipeline/outputs_tpat0/Hospital_Billing_pmf/forecast_IB_summary.csv: 047da40a653bc81265f2db0a34078f5e712e8604085e7e2be1fbaa95bc57ddbd
+  pipeline/outputs_tpat0/Hospital_Billing_pmf/forecast_OB_summary.csv: b09eb5ac78dca15f72108e651061e90c7d9ef7b6b4ae741e0e445101d40ca919
+  pipeline/outputs_tpat0/Hospital_Billing_pmf/median_choice.json: 724279ce2a3cbf8ac8ac0e3afc8c194661ca5f77302ba29478be4841d441cd9b
+  pipeline/outputs_tpat0/Hospital_Billing_pmf/structural_metrics.csv: 5c4edfa1033d8b98a46a43100f32c2e24eea04b0336940aa1de12fb7de17ee10
+  pipeline/outputs_tpat0/Sepsis_pmf/experiment_summary.json: b34cbe012fcaa5634670077b11cacd80285e9576df4c59a57318f8f7317e1ba1
+  pipeline/outputs_tpat0/Sepsis_pmf/forecast_ABA_summary.csv: 7ef1bbe2ee234317e269cc0b9be36e28dc11c4fa2bb05d6585e58962b23926b4
+  pipeline/outputs_tpat0/Sepsis_pmf/forecast_AB_summary.csv: bac254124b781c556bf97f85204f3592e63ecefd329c2126263b4f4afb4510d4
+  pipeline/outputs_tpat0/Sepsis_pmf/forecast_A_summary.csv: f1a00edcce99b7682c64f9d51618c3f30a6aabbbd2517107baab4d780ab114a4
+  pipeline/outputs_tpat0/Sepsis_pmf/forecast_IB_summary.csv: 008da93bc9eea62459787702f63d43157fa1e94ee5694da9ec5486aaa8961bbb
+  pipeline/outputs_tpat0/Sepsis_pmf/forecast_OB_summary.csv: 9e657e5525c962214b88675a24781de2ab885ae14f4e5e252186e9f06c8cd350
+  pipeline/outputs_tpat0/Sepsis_pmf/median_choice.json: c18110b664b72528ad19b39cb6fd6b5f90926f397c977474f5472cdf1c27c117
+  pipeline/outputs_tpat0/Sepsis_pmf/structural_metrics.csv: da1deee73906597604f8af5dec7fda60b7084a493c6485ebd952ed8c71b95de6
+  pipeline/outputs_tpat0/run_manifest.json: 074d33425c4e1d5b52e1d324fbb105359612bb03092196e8f47b765518e21106
+  pipeline/outputs_tpatm1/BPI2017_pmf/experiment_summary.json: d56afb722899570c73c94780a3e5b47896a74f21f3ef182cb3cea89cbff268a0
+  pipeline/outputs_tpatm1/BPI2017_pmf/forecast_AB_summary.csv: de82491f7fe5d3bea8e86f541f3fd5d3f0d464192a70109a90346676b429b4d4
+  pipeline/outputs_tpatm1/BPI2017_pmf/forecast_A_summary.csv: 6f327c21d3862f960d54bfa56f498d7d007bd20881de82c04016c7b2d3ecf8f6
+  pipeline/outputs_tpatm1/BPI2017_pmf/forecast_IB_summary.csv: 6e6089cacafc127961b8460ebdfb0f48a92515dc0d00d896dec7b0801dbe2173
+  pipeline/outputs_tpatm1/BPI2017_pmf/forecast_OB_summary.csv: 52fed99d2739085e640296d64a72a3871aa0ab4ba149f08a6581facd965b2af7
+  pipeline/outputs_tpatm1/BPI2017_pmf/median_choice.json: c5822c7af418714f0b7aacae4037f21f7dd75eeec697687d3cab4433611d6880
+  pipeline/outputs_tpatm1/BPI2017_pmf/structural_metrics.csv: b1c95590940e8e29c607eee4cfdad93d212c73108f6cd2c28638f1bf4f2bbd76
+  pipeline/outputs_tpatm1/BPI2019_pmf/experiment_summary.json: dbc71be5b03f36f472d02c0aba1e82da56082a3e89e60eebffdedf9fd8af524d
+  pipeline/outputs_tpatm1/BPI2019_pmf/forecast_ABA_summary.csv: 31b39f01abacd59dc4c4b9ed531cda4bb8118503c3fc4665862a1305ba77a3fc
+  pipeline/outputs_tpatm1/BPI2019_pmf/forecast_AB_summary.csv: fba26debbe6ee34b7792edc5bac4dae3369183af11af154c3bf3df96a3d3684f
+  pipeline/outputs_tpatm1/BPI2019_pmf/forecast_A_summary.csv: 885c515bbbe8615bca35af525be67c2b9a8337a6325eb4ecca5c5889d9f6e8e7
+  pipeline/outputs_tpatm1/BPI2019_pmf/forecast_IB_summary.csv: f2ac864605e4ccc34061cea32e455044c40cee60135208af0a28250c2f43766e
+  pipeline/outputs_tpatm1/BPI2019_pmf/forecast_OB_summary.csv: adac442e66ff35e5d23fbcbf26db7c1d6aa2d48cad5446e8cd239a0fee9a59d3
+  pipeline/outputs_tpatm1/BPI2019_pmf/median_choice.json: dddc36a7303a5c95e3b317fbfa27c3a79da45a15e86bd44b116e54c7f225e825
+  pipeline/outputs_tpatm1/BPI2019_pmf/structural_metrics.csv: b4f31ac0259810fdb546101ecf7f5a2deab5d2f14879a8b35fb16de998688e19
+  pipeline/outputs_tpatm1/Hospital_Billing_pmf/experiment_summary.json: 8caf1f0e549e2505f43f8050aa0589eaa10d84c00f57253415bfedde155b4614
+  pipeline/outputs_tpatm1/Hospital_Billing_pmf/forecast_ABA_summary.csv: b0efa579c47ceb51b428ce7ecc8800e206709eed88ee883c59375ab2e327a043
+  pipeline/outputs_tpatm1/Hospital_Billing_pmf/forecast_AB_summary.csv: 4e6a9b2405d4fec747c5ceaa7a285e6d15087fd2616a86a8905747a6255f51be
+  pipeline/outputs_tpatm1/Hospital_Billing_pmf/forecast_A_summary.csv: e805284fb620d706894c9e38af72b0116c1f7e5e094cd9143bebb88324ec8a2e
+  pipeline/outputs_tpatm1/Hospital_Billing_pmf/forecast_IB_summary.csv: 047da40a653bc81265f2db0a34078f5e712e8604085e7e2be1fbaa95bc57ddbd
+  pipeline/outputs_tpatm1/Hospital_Billing_pmf/forecast_OB_summary.csv: b09eb5ac78dca15f72108e651061e90c7d9ef7b6b4ae741e0e445101d40ca919
+  pipeline/outputs_tpatm1/Hospital_Billing_pmf/median_choice.json: 752f78f02786ceccbda4a2739dfc4e316df4f7816cc40043c8f3ea307a8d481e
+  pipeline/outputs_tpatm1/Hospital_Billing_pmf/structural_metrics.csv: 13c3ec0bab1f9045f9c92b8fc9100dd80336514d743c11afc0783998856ec77c
+  pipeline/outputs_tpatm1/Sepsis_pmf/experiment_summary.json: 0a2c80d15b4b408f5e1374040dacdb6766727c766f6d7004cab239bb11d9d474
+  pipeline/outputs_tpatm1/Sepsis_pmf/forecast_ABA_summary.csv: 7ef1bbe2ee234317e269cc0b9be36e28dc11c4fa2bb05d6585e58962b23926b4
+  pipeline/outputs_tpatm1/Sepsis_pmf/forecast_AB_summary.csv: bac254124b781c556bf97f85204f3592e63ecefd329c2126263b4f4afb4510d4
+  pipeline/outputs_tpatm1/Sepsis_pmf/forecast_A_summary.csv: f1a00edcce99b7682c64f9d51618c3f30a6aabbbd2517107baab4d780ab114a4
+  pipeline/outputs_tpatm1/Sepsis_pmf/forecast_IB_summary.csv: 008da93bc9eea62459787702f63d43157fa1e94ee5694da9ec5486aaa8961bbb
+  pipeline/outputs_tpatm1/Sepsis_pmf/forecast_OB_summary.csv: 9e657e5525c962214b88675a24781de2ab885ae14f4e5e252186e9f06c8cd350
+  pipeline/outputs_tpatm1/Sepsis_pmf/median_choice.json: dadda4ab18ffc7e2675519af62e1ace75b29363c503f4924b0e3b3ab3430a919
+  pipeline/outputs_tpatm1/Sepsis_pmf/structural_metrics.csv: 21a76fb5228671cc34bbd9f68322d769d781ff971b4b17008f83af6f230deffb
+  pipeline/outputs_tpatm1/run_manifest.json: a314ea00cd206307a4d6bf11b7dff31dd4666d30fa11f6d0a1bc4998dc2086f0
+  unfinishable_nets.csv: 894fb140c12b548798f61bc083ba7ae7ae7136dd24ff5b914fd1e282ccfc4070
+  window_composition.csv: 8c99c29b54dc909c55952dbaeaf4b8d13082dec02f787be31453d444d60816d4

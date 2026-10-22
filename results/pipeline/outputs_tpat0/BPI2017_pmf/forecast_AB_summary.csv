@@ -1,0 +1,22 @@
+series_key,forecasted_total
+O_Accepted→■,16787.94921875
+O_Cancelled→■,24164.83984375
+O_Create Offer→O_Created,50939.5
+O_Created→O_Cancelled,1444.4197998046875
+O_Created→O_Refused,1.127415418624878
+O_Created→O_Sent (mail and online),46758.3203125
+O_Created→O_Sent (online only),2408.92529296875
+O_Refused→■,5832.115234375
+O_Returned→O_Accepted,16771.59765625
+O_Returned→O_Cancelled,2632.1474609375
+O_Returned→O_Refused,4448.40966796875
+O_Returned→■,8.04208755493164
+O_Sent (mail and online)→O_Cancelled,19229.736328125
+O_Sent (mail and online)→O_Refused,1015.2627563476562
+O_Sent (mail and online)→O_Returned,26438.193359375
+O_Sent (mail and online)→■,3.2254233360290527
+O_Sent (online only)→O_Cancelled,831.4498291015625
+O_Sent (online only)→O_Refused,3.43619441986084
+O_Sent (online only)→O_Returned,1275.623779296875
+O_Sent (online only)→■,0.030140651389956474
+▶→O_Create Offer,50939.5

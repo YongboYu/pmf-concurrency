@@ -1,0 +1,220 @@
+series_key,forecasted_total
+Block Purchase Order Item:{Change Approval for Purchase Order},5.7143120765686035
+Block Purchase Order Item:{Create Purchase Order Item},2.595503330230713
+Cancel Goods Receipt:{Change Price},1.0733716487884521
+"Cancel Goods Receipt:{Create Purchase Order Item,Vendor creates debit memo}",0.009664642624557018
+Cancel Goods Receipt:{Create Purchase Order Item},31.271879196166992
+Cancel Goods Receipt:{Record Goods Receipt},1.2154252529144287
+Cancel Goods Receipt:{Vendor creates invoice},0.0492996945977211
+Cancel Invoice Receipt:{Cancel Goods Receipt},40.26030731201172
+"Cancel Invoice Receipt:{Clear Invoice,Record Invoice Receipt}",0.8384159803390503
+Cancel Invoice Receipt:{Clear Invoice},182.68231201171875
+"Cancel Invoice Receipt:{Record Goods Receipt,Record Invoice Receipt}",0.10913799703121185
+Cancel Invoice Receipt:{Record Goods Receipt},1.6375795602798462
+Cancel Invoice Receipt:{Record Invoice Receipt},9.068704605102539
+Cancel Invoice Receipt:{Vendor creates debit memo},17.232933044433594
+Cancel Subsequent Invoice:{Vendor creates debit memo},0.7520127892494202
+Change Approval for Purchase Order:{Create Purchase Order Item},19.233863830566406
+Change Approval for Purchase Order:{Delete Purchase Order Item},7.811010360717773
+Change Approval for Purchase Order:{Release Purchase Order},1.7391021251678467
+"Change Delivery Indicator:{Change Quantity,Record Goods Receipt}",2.449885129928589
+"Change Delivery Indicator:{Change Quantity,Vendor creates invoice}",0.007408796809613705
+Change Delivery Indicator:{Change Quantity},0.12084200978279114
+Change Delivery Indicator:{Create Purchase Order Item},17.925739288330078
+"Change Delivery Indicator:{Record Goods Receipt,Vendor creates invoice}",0.16591045260429382
+Change Delivery Indicator:{Record Goods Receipt},2.1166746616363525
+Change Delivery Indicator:{Record Invoice Receipt},0.2713285982608795
+Change Delivery Indicator:{Vendor creates invoice},0.1692623496055603
+Change Price:{Change Approval for Purchase Order},2.1308252811431885
+Change Price:{Change Quantity},1.109911322593689
+Change Price:{Create Purchase Order Item},2484.69580078125
+Change Price:{Receive Order Confirmation},1.8584612607955933
+"Change Price:{Record Goods Receipt,Record Invoice Receipt}",0.18758529424667358
+"Change Price:{Record Goods Receipt,Vendor creates invoice}",0.22325772047042847
+Change Price:{Record Goods Receipt},3.9554295539855957
+Change Price:{Record Invoice Receipt},417.5176696777344
+Change Price:{Remove Payment Block},0.47582733631134033
+Change Price:{Vendor creates invoice},5.801624774932861
+Change Quantity:{Change Approval for Purchase Order},3.180696964263916
+Change Quantity:{Change Price},7.826927185058594
+Change Quantity:{Create Purchase Order Item},7212.921875
+Change Quantity:{Delete Purchase Order Item},17.48834991455078
+Change Quantity:{Receive Order Confirmation},50.89435577392578
+Change Quantity:{Record Goods Receipt},0.49315255880355835
+Change Quantity:{Record Invoice Receipt},0.9821862578392029
+Change Quantity:{Vendor creates invoice},21.562549591064453
+Change Storage Location:{Create Purchase Order Item},0.8896623253822327
+"Clear Invoice:{Cancel Invoice Receipt,Record Invoice Receipt}",15.29316520690918
+Clear Invoice:{Cancel Invoice Receipt},82.763916015625
+"Clear Invoice:{Change Delivery Indicator,Record Invoice Receipt}",0.5007625818252563
+"Clear Invoice:{Change Price,Record Invoice Receipt}",3.4585061073303223
+"Clear Invoice:{Change Price,Remove Payment Block}",0.42366302013397217
+Clear Invoice:{Change Price},19.334354400634766
+"Clear Invoice:{Record Goods Receipt,Remove Payment Block}",6.82231330871582
+Clear Invoice:{Record Goods Receipt},0.38809934258461
+"Clear Invoice:{Record Invoice Receipt,Vendor creates invoice}",19.00760269165039
+Clear Invoice:{Record Invoice Receipt},72155.7265625
+Clear Invoice:{Remove Payment Block},28491.181640625
+Clear Invoice:{Vendor creates invoice},1.5218846797943115
+Create Purchase Order Item:{Create Purchase Requisition Item},131022.390625
+Create Purchase Order Item:{Release Purchase Requisition},178.4978790283203
+"Create Purchase Order Item:{SRM: Change was Transmitted,SRM: In Transfer to Execution Syst.}",0.181099995970726
+"Create Purchase Order Item:{SRM: Change was Transmitted,SRM: Ordered}",0.3418688178062439
+Create Purchase Order Item:{SRM: Change was Transmitted},29.019678115844727
+"Create Purchase Order Item:{SRM: In Transfer to Execution Syst.,SRM: Ordered}",0.19308166205883026
+Create Purchase Order Item:{SRM: In Transfer to Execution Syst.},0.6620017290115356
+Create Purchase Order Item:{SRM: Ordered},6.293412208557129
+Create Purchase Order Item:{Vendor creates debit memo},1.6292976140975952
+"Create Purchase Order Item:{Vendor creates invoice,▶}",0.05822734162211418
+Create Purchase Order Item:{Vendor creates invoice},4.141623497009277
+Create Purchase Order Item:{▶},72934.234375
+Create Purchase Requisition Item:{Vendor creates invoice},0.5970834493637085
+Create Purchase Requisition Item:{▶},132123.796875
+Delete Purchase Order Item:{Block Purchase Order Item},5.486825466156006
+Delete Purchase Order Item:{Change Price},0.9346500635147095
+Delete Purchase Order Item:{Change Quantity},16.097936630249023
+Delete Purchase Order Item:{Create Purchase Order Item},3561.122314453125
+Delete Purchase Order Item:{Receive Order Confirmation},638.0342407226562
+Reactivate Purchase Order Item:{Delete Purchase Order Item},0.4138680696487427
+Receive Order Confirmation:{Change Approval for Purchase Order},13.979348182678223
+Receive Order Confirmation:{Change Price},5.210746765136719
+Receive Order Confirmation:{Change Quantity},0.3707578182220459
+Receive Order Confirmation:{Create Purchase Order Item},27569.5
+Receive Order Confirmation:{Vendor creates invoice},0.12272056192159653
+Record Goods Receipt:{Cancel Goods Receipt},1.0259449481964111
+Record Goods Receipt:{Change Approval for Purchase Order},0.18602333962917328
+"Record Goods Receipt:{Change Price,Change Quantity}",0.116475909948349
+"Record Goods Receipt:{Change Price,Receive Order Confirmation}",0.06947667896747589
+"Record Goods Receipt:{Change Price,Vendor creates invoice}",1.1695657968521118
+Record Goods Receipt:{Change Price},1252.257568359375
+"Record Goods Receipt:{Change Quantity,Receive Order Confirmation}",0.27140963077545166
+"Record Goods Receipt:{Change Quantity,Record Invoice Receipt}",0.04786578193306923
+"Record Goods Receipt:{Change Quantity,Vendor creates invoice}",8.455066680908203
+Record Goods Receipt:{Change Quantity},4708.1279296875
+Record Goods Receipt:{Change Storage Location},0.6411768198013306
+"Record Goods Receipt:{Create Purchase Order Item,SRM: Change was Transmitted}",0.14222358167171478
+"Record Goods Receipt:{Create Purchase Order Item,Vendor creates invoice}",14.80728816986084
+Record Goods Receipt:{Create Purchase Order Item},45396.2421875
+Record Goods Receipt:{Reactivate Purchase Order Item},0.20371924340724945
+"Record Goods Receipt:{Receive Order Confirmation,Vendor creates invoice}",0.31699442863464355
+Record Goods Receipt:{Receive Order Confirmation},20319.90234375
+"Record Goods Receipt:{Record Invoice Receipt,Vendor creates invoice}",0.46437498927116394
+Record Goods Receipt:{Record Invoice Receipt},496.48382568359375
+Record Goods Receipt:{Remove Payment Block},1.637515902519226
+Record Goods Receipt:{SRM: Change was Transmitted},0.21591441333293915
+Record Goods Receipt:{Update Order Confirmation},0.22318972647190094
+"Record Goods Receipt:{Vendor creates debit memo,Vendor creates invoice}",1.4010915756225586
+Record Goods Receipt:{Vendor creates debit memo},6.996959686279297
+Record Goods Receipt:{Vendor creates invoice},22858.640625
+"Record Invoice Receipt:{Cancel Goods Receipt,Record Goods Receipt,Vendor creates invoice}",0.08952519297599792
+"Record Invoice Receipt:{Cancel Goods Receipt,Record Goods Receipt}",0.04950171709060669
+Record Invoice Receipt:{Cancel Goods Receipt},0.01584455370903015
+"Record Invoice Receipt:{Cancel Invoice Receipt,Clear Invoice}",0.06260132789611816
+Record Invoice Receipt:{Cancel Invoice Receipt},4.81782341003418
+"Record Invoice Receipt:{Change Delivery Indicator,Record Goods Receipt,Vendor creates invoice}",0.015047465451061726
+"Record Invoice Receipt:{Change Delivery Indicator,Record Goods Receipt}",0.03965682536363602
+Record Invoice Receipt:{Change Delivery Indicator},26.341339111328125
+"Record Invoice Receipt:{Change Price,Record Goods Receipt,Vendor creates invoice}",0.30843043327331543
+"Record Invoice Receipt:{Change Price,Record Goods Receipt}",2.4672069549560547
+"Record Invoice Receipt:{Change Price,Vendor creates invoice}",0.44945621490478516
+Record Invoice Receipt:{Change Price},2.773575782775879
+"Record Invoice Receipt:{Change Quantity,Record Goods Receipt,Vendor creates invoice}",0.16330306231975555
+"Record Invoice Receipt:{Change Quantity,Record Goods Receipt}",0.19976967573165894
+"Record Invoice Receipt:{Change Quantity,Vendor creates invoice}",0.7245327234268188
+Record Invoice Receipt:{Change Quantity},2.2815968990325928
+Record Invoice Receipt:{Clear Invoice},18.523664474487305
+"Record Invoice Receipt:{Create Purchase Order Item,Vendor creates invoice}",1.659877896308899
+Record Invoice Receipt:{Create Purchase Order Item},418.75897216796875
+Record Invoice Receipt:{Receive Order Confirmation},0.4165235459804535
+"Record Invoice Receipt:{Record Goods Receipt,Vendor creates debit memo,Vendor creates invoice}",0.3854241967201233
+"Record Invoice Receipt:{Record Goods Receipt,Vendor creates debit memo}",0.3901679515838623
+"Record Invoice Receipt:{Record Goods Receipt,Vendor creates invoice}",834.595458984375
+Record Invoice Receipt:{Record Goods Receipt},102297.3515625
+"Record Invoice Receipt:{Vendor creates debit memo,Vendor creates invoice}",1.4786396026611328
+Record Invoice Receipt:{Vendor creates debit memo},4.524396896362305
+Record Invoice Receipt:{Vendor creates invoice},9027.787109375
+Release Purchase Order:{Create Purchase Order Item},1.864916205406189
+Release Purchase Requisition:{Create Purchase Requisition Item},178.4978790283203
+"Remove Payment Block:{Cancel Invoice Receipt,Record Invoice Receipt}",2.947920560836792
+Remove Payment Block:{Cancel Invoice Receipt},0.09855552017688751
+"Remove Payment Block:{Cancel Subsequent Invoice,Record Invoice Receipt}",0.19610314071178436
+Remove Payment Block:{Cancel Subsequent Invoice},0.5834168195724487
+"Remove Payment Block:{Change Price,Record Goods Receipt,Record Invoice Receipt}",0.018582573160529137
+"Remove Payment Block:{Change Price,Record Goods Receipt}",1.270578145980835
+"Remove Payment Block:{Change Price,Record Invoice Receipt}",0.28763681650161743
+Remove Payment Block:{Change Price},500.28509521484375
+"Remove Payment Block:{Clear Invoice,Record Invoice Receipt}",1.0337966680526733
+Remove Payment Block:{Clear Invoice},0.5128612518310547
+"Remove Payment Block:{Record Goods Receipt,Record Invoice Receipt,Vendor creates invoice}",0.05490095913410187
+"Remove Payment Block:{Record Goods Receipt,Record Invoice Receipt}",2290.332763671875
+"Remove Payment Block:{Record Goods Receipt,Vendor creates invoice}",0.9851242303848267
+Remove Payment Block:{Record Goods Receipt},1709.106201171875
+"Remove Payment Block:{Record Invoice Receipt,Vendor creates invoice}",0.41927289962768555
+Remove Payment Block:{Record Invoice Receipt},10720.2392578125
+Remove Payment Block:{Vendor creates invoice},1.160440444946289
+SRM: Awaiting Approval:{SRM: Complete},184.3451690673828
+SRM: Change was Transmitted:{Create Purchase Order Item},0.8538413643836975
+"SRM: Change was Transmitted:{SRM: In Transfer to Execution Syst.,SRM: Ordered}",0.6027199029922485
+SRM: Change was Transmitted:{SRM: In Transfer to Execution Syst.},0.44263261556625366
+SRM: Change was Transmitted:{SRM: Ordered},43.322540283203125
+SRM: Complete:{SRM: Created},184.3451690673828
+SRM: Created:{▶},184.3451690673828
+SRM: Document Completed:{SRM: Awaiting Approval},184.3451690673828
+SRM: In Transfer to Execution Syst.:{SRM: Change was Transmitted},0.30790770053863525
+SRM: In Transfer to Execution Syst.:{SRM: Document Completed},105.80386352539062
+SRM: In Transfer to Execution Syst.:{SRM: Ordered},0.16286572813987732
+SRM: Ordered:{SRM: Change was Transmitted},0.11747492104768753
+SRM: Ordered:{SRM: Document Completed},2.191638946533203
+SRM: Ordered:{SRM: In Transfer to Execution Syst.},81.08946228027344
+Update Order Confirmation:{Receive Order Confirmation},0.24574092030525208
+Vendor creates debit memo:{Cancel Goods Receipt},14.133420944213867
+Vendor creates debit memo:{Create Purchase Order Item},4.553335189819336
+"Vendor creates debit memo:{Record Goods Receipt,Vendor creates invoice}",0.44761404395103455
+Vendor creates debit memo:{Record Goods Receipt},3.1611578464508057
+Vendor creates debit memo:{Record Invoice Receipt},0.3431012034416199
+Vendor creates debit memo:{Vendor creates invoice},4.282115936279297
+Vendor creates debit memo:{▶},2.5781455039978027
+"Vendor creates invoice:{Cancel Goods Receipt,Record Goods Receipt}",0.008856464177370071
+"Vendor creates invoice:{Change Approval for Purchase Order,Release Purchase Order}",1.8944368362426758
+Vendor creates invoice:{Change Approval for Purchase Order},5.3152241706848145
+"Vendor creates invoice:{Change Price,Change Quantity}",0.269523024559021
+"Vendor creates invoice:{Change Price,Receive Order Confirmation}",0.07045667618513107
+"Vendor creates invoice:{Change Price,Record Goods Receipt}",0.13468919694423676
+Vendor creates invoice:{Change Price},1571.7333984375
+"Vendor creates invoice:{Change Quantity,Receive Order Confirmation}",0.017758186906576157
+Vendor creates invoice:{Change Quantity},3978.766357421875
+"Vendor creates invoice:{Create Purchase Order Item,SRM: Change was Transmitted}",3.7317793369293213
+Vendor creates invoice:{Create Purchase Order Item},81740.71875
+Vendor creates invoice:{Reactivate Purchase Order Item},0.3841187655925751
+Vendor creates invoice:{Receive Order Confirmation},8717.3427734375
+"Vendor creates invoice:{Record Goods Receipt,Record Invoice Receipt}",3.819866418838501
+"Vendor creates invoice:{Record Goods Receipt,Vendor creates debit memo}",0.019969262182712555
+Vendor creates invoice:{Record Goods Receipt},26216.81640625
+Vendor creates invoice:{Record Invoice Receipt},6.677192211151123
+Vendor creates invoice:{SRM: Change was Transmitted},0.797014594078064
+Vendor creates invoice:{Vendor creates debit memo},5.8051347732543945
+Vendor creates invoice:{▶},652.4996337890625
+■:{Block Purchase Order Item},3.8534932136535645
+■:{Cancel Goods Receipt},64.75708770751953
+"■:{Cancel Invoice Receipt,Clear Invoice,Remove Payment Block}",0.21228794753551483
+"■:{Cancel Invoice Receipt,Clear Invoice}",18.258283615112305
+■:{Cancel Invoice Receipt},293.61090087890625
+■:{Change Approval for Purchase Order},4.63877534866333
+■:{Change Delivery Indicator},53.331050872802734
+"■:{Change Price,Clear Invoice,Record Invoice Receipt}",0.051575593650341034
+■:{Change Price},1.7734498977661133
+"■:{Change Quantity,Clear Invoice}",1.6529322977021366e-07
+"■:{Change Quantity,Delete Purchase Order Item}",0.06739725172519684
+■:{Change Quantity},97.63058471679688
+"■:{Clear Invoice,Record Invoice Receipt,Remove Payment Block}",0.126474529504776
+"■:{Clear Invoice,Record Invoice Receipt}",60.66668701171875
+"■:{Clear Invoice,Remove Payment Block}",101.42108154296875
+■:{Clear Invoice},144533.578125
+■:{Create Purchase Order Item},1362.63818359375
+■:{Delete Purchase Order Item},5937.33642578125
+■:{Receive Order Confirmation},61.090579986572266
+"■:{Record Goods Receipt,Record Invoice Receipt}",74.50006103515625
+■:{Record Goods Receipt},6036.07421875
+"■:{Record Invoice Receipt,Vendor creates invoice}",0.5673309564590454
+■:{Record Invoice Receipt},8687.427734375
+■:{Remove Payment Block},1227.0162353515625

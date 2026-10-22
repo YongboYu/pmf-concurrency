@@ -1,0 +1,60 @@
+{
+  "campaign_root": "outputs_tpat0",
+  "hydra_overrides": "experiment.tPAT=0.0 experiment.record_median_over_levels=true",
+  "launcher": "scripts/local/run_campaign.sh",
+  "host": "HP-Z4-G4-LNX",
+  "device": "cuda",
+  "gpu": "NVIDIA RTX A6000",
+  "git_commit": "94c447f76b7da7f9501850cfb538c3735edc9ad6",
+  "git_dirty": false,
+  "omp_num_threads": 8,
+  "datasets_requested": [
+    "sepsis",
+    "bpi2017",
+    "hospital_billing",
+    "bpi2019"
+  ],
+  "started_utc": "2026-10-05T13:53:48Z",
+  "runs": [
+    {
+      "dataset": "sepsis",
+      "output_dir": "outputs_tpat0/Sepsis_pmf",
+      "log": "logs/local-pipe-sepsis-20261005T135348Z.out",
+      "exit_code": 0,
+      "wall_clock_sec": 1504,
+      "peak_rss_gb": 1.6,
+      "structural_metrics_rows": 340,
+      "finished_utc": "2026-10-05T14:18:52Z"
+    },
+    {
+      "dataset": "bpi2017",
+      "output_dir": "outputs_tpat0/BPI2017_pmf",
+      "log": "logs/local-pipe-bpi2017-20261005T141852Z.out",
+      "exit_code": 0,
+      "wall_clock_sec": 229,
+      "peak_rss_gb": 1.9,
+      "structural_metrics_rows": 232,
+      "finished_utc": "2026-10-05T14:22:41Z"
+    },
+    {
+      "dataset": "hospital_billing",
+      "output_dir": "outputs_tpat0/Hospital_Billing_pmf",
+      "log": "logs/local-pipe-hospital_billing-20261005T142241Z.out",
+      "exit_code": 0,
+      "wall_clock_sec": 1308,
+      "peak_rss_gb": 3.1,
+      "structural_metrics_rows": 556,
+      "finished_utc": "2026-10-05T14:44:29Z"
+    },
+    {
+      "dataset": "bpi2019",
+      "output_dir": "outputs_tpat0/BPI2019_pmf",
+      "log": "logs/local-pipe-bpi2019-20261005T144429Z.out",
+      "exit_code": 0,
+      "wall_clock_sec": 2252,
+      "peak_rss_gb": 6.0,
+      "structural_metrics_rows": 220,
+      "finished_utc": "2026-10-05T15:22:01Z"
+    }
+  ]
+}

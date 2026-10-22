@@ -1,0 +1,23 @@
+series_key,forecasted_total
+"O_Accepted:{O_Returned,O_Sent (online only)}",0.0015880009159445763
+O_Accepted:{O_Returned},15917.158203125
+O_Cancelled:{O_Created},1439.58837890625
+O_Cancelled:{O_Returned},2461.41357421875
+O_Cancelled:{O_Sent (mail and online)},9910.4013671875
+O_Cancelled:{O_Sent (online only)},834.947265625
+O_Create Offer:{▶},50939.5
+O_Created:{O_Create Offer},50939.5
+O_Refused:{O_Created},1.127415418624878
+O_Refused:{O_Returned},4193.6318359375
+O_Refused:{O_Sent (mail and online)},351.7025146484375
+O_Refused:{O_Sent (online only)},3.43619441986084
+O_Returned:{O_Sent (mail and online)},11193.05078125
+O_Returned:{O_Sent (online only)},1276.77783203125
+O_Sent (mail and online):{O_Created},46758.3203125
+O_Sent (online only):{O_Created},2408.92529296875
+■:{O_Accepted},16787.94921875
+■:{O_Cancelled},24164.83984375
+■:{O_Refused},5832.115234375
+■:{O_Returned},8.04208755493164
+■:{O_Sent (mail and online)},0.19219587743282318
+■:{O_Sent (online only)},0.030140651389956474

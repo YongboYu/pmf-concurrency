@@ -1,0 +1,52 @@
+{
+  "expected_sha256": "eb9233769c14bd31b313bb1ef0494e25fb752944ea728b41d16e3e408842421b",
+  "models": {
+    "bpi2017 tPAT -1.0": {
+      "weekly_dir": "/home/yongbo/pmf-step3/outputs_tpatm1/BPI2017_pmf/weekly_models",
+      "models_sha256": "0e710389a065b86c1fab613984234d3d4af6e2abc0c86db3392c92554df7795a"
+    },
+    "bpi2017 tPAT 0.0": {
+      "weekly_dir": "/home/yongbo/pmf-step3/outputs_tpat0/BPI2017_pmf/weekly_models",
+      "models_sha256": "2b67d23322a3186f97d0aef4a374d29027157394232f138ef7fa3edea1e75440"
+    },
+    "bpi2019 tPAT -1.0": {
+      "weekly_dir": "/home/yongbo/pmf-step3/outputs_tpatm1/BPI2019_pmf/weekly_models",
+      "models_sha256": "ae718dbb0a8ac83dcd7e06f47ae08584b370e7e351d9a03c91af15cf7d8a6e65"
+    },
+    "bpi2019 tPAT 0.0": {
+      "weekly_dir": "/home/yongbo/pmf-step3/outputs_tpat0/BPI2019_pmf/weekly_models",
+      "models_sha256": "96dd118494dd66f0a9f5feb88c5ae873bbe9d7c5a6270f3114b7829a9e31fae0"
+    },
+    "hospital_billing tPAT -1.0": {
+      "weekly_dir": "/home/yongbo/pmf-step3/outputs_tpatm1/Hospital_Billing_pmf/weekly_models",
+      "models_sha256": "3f30a4438126dcf48666144973eaa134f742c79bcddc8df67ae3908ff85c23fc"
+    },
+    "hospital_billing tPAT 0.0": {
+      "weekly_dir": "/home/yongbo/pmf-step3/outputs_tpat0/Hospital_Billing_pmf/weekly_models",
+      "models_sha256": "3667617a5164b827d27517c0de5d84056ab7ce43914e2949104f279d27c20377"
+    },
+    "sepsis tPAT -1.0": {
+      "weekly_dir": "/home/yongbo/pmf-step3/outputs_tpatm1/Sepsis_pmf/weekly_models",
+      "models_sha256": "e99c57e75b3c91973ae691f92070b464ce2a1d94e4fac7d64c69cbc2025efc36"
+    },
+    "sepsis tPAT 0.0": {
+      "weekly_dir": "/home/yongbo/pmf-step3/outputs_tpat0/Sepsis_pmf/weekly_models",
+      "models_sha256": "66cd3a85f70a3e9b3e8a76e5e0cab9590b18556fe0fa9c9b5262d962bed74698"
+    }
+  },
+  "git_commit": "635a5b29dadf68b2b8dc5112859b3f960c1c2294",
+  "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "uv_lock_sha256": "a7cd8f92e43db65cf74f6f45d09965688598d5a72cb8045ab06046e53c1507de",
+  "python": "3.12.12",
+  "pm4py": "2.7.19.8",
+  "host": "HP-Z4-G4-LNX",
+  "cpu": "Intel(R) Xeon(R) W-2245 CPU @ 3.90GHz",
+  "ram_gb": 46.8,
+  "os": "Linux-6.8.0-124-generic-x86_64-with-glibc2.35",
+  "concurrency": 2,
+  "mem_gb": 12.0,
+  "time_min": 20.0,
+  "omp_num_threads": "8",
+  "mkl_num_threads": "8",
+  "pmf_guard": "1"
+}

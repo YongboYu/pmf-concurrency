@@ -1,0 +1,253 @@
+series_key,forecasted_total
+"Admission IC:{Admission NC,ER Sepsis Triage}",0.054721441119909286
+Admission IC:{Admission NC},0.17840224504470825
+"Admission IC:{CRP,IV Antibiotics}",0.013873034156858921
+"Admission IC:{CRP,LacticAcid}",0.0144253671169281
+Admission IC:{CRP},0.10151151567697525
+Admission IC:{ER Registration},0.022883888334035873
+Admission IC:{ER Sepsis Triage},0.014468234032392502
+"Admission IC:{IV Antibiotics,IV Liquid}",0.022883888334035873
+"Admission IC:{IV Antibiotics,LacticAcid}",0.013979824259877205
+"Admission IC:{IV Antibiotics,Leucocytes}",0.005460571497678757
+Admission IC:{IV Antibiotics},0.5111531019210815
+Admission IC:{IV Liquid},0.013886363245546818
+Admission IC:{LacticAcid},0.45459386706352234
+Admission IC:{Leucocytes},0.067036934196949
+"Admission NC:{Admission IC,CRP}",0.015284650959074497
+"Admission NC:{Admission IC,LacticAcid}",-0.02474706806242466
+Admission NC:{Admission IC},0.008020484820008278
+"Admission NC:{CRP,ER Sepsis Triage}",0.02775082364678383
+"Admission NC:{CRP,IV Antibiotics,IV Liquid}",0.014615189284086227
+"Admission NC:{CRP,IV Antibiotics,LacticAcid}",0.005240107886493206
+"Admission NC:{CRP,IV Antibiotics}",0.20905375480651855
+"Admission NC:{CRP,LacticAcid}",0.03653046861290932
+"Admission NC:{CRP,Leucocytes}",0.006490958854556084
+Admission NC:{CRP},0.8482801914215088
+"Admission NC:{ER Sepsis Triage,LacticAcid}",0.00556061090901494
+"Admission NC:{ER Sepsis Triage,Leucocytes}",-0.0009895272087305784
+Admission NC:{ER Sepsis Triage},0.10040758550167084
+"Admission NC:{IV Antibiotics,IV Liquid,LacticAcid}",0.014814149588346481
+"Admission NC:{IV Antibiotics,IV Liquid,Leucocytes}",0.02163950353860855
+"Admission NC:{IV Antibiotics,IV Liquid}",0.24773700535297394
+"Admission NC:{IV Antibiotics,LacticAcid}",0.09089501202106476
+"Admission NC:{IV Antibiotics,Leucocytes}",0.027402134612202644
+Admission NC:{IV Antibiotics},264.6197509765625
+Admission NC:{IV Liquid},0.1044490858912468
+"Admission NC:{LacticAcid,Leucocytes}",0.04476955533027649
+Admission NC:{LacticAcid},1.3207188844680786
+Admission NC:{Leucocytes},0.4394029974937439
+Admission NC:{Release B},0.004709185566753149
+"CRP:{Admission IC,Admission NC}",0.014407842420041561
+"CRP:{Admission IC,IV Antibiotics}",0.013886363245546818
+"CRP:{Admission IC,LacticAcid}",0.017352242022752762
+"CRP:{Admission IC,Leucocytes}",0.06161632016301155
+CRP:{Admission IC},0.1306135654449463
+"CRP:{Admission NC,IV Liquid}",0.010609650984406471
+"CRP:{Admission NC,LacticAcid}",-0.009343305602669716
+"CRP:{Admission NC,Leucocytes}",0.18105334043502808
+CRP:{Admission NC},11.127768516540527
+"CRP:{ER Registration,Leucocytes}",0.014044208452105522
+CRP:{ER Registration},0.11459095776081085
+"CRP:{ER Sepsis Triage,ER Triage}",0.04316595941781998
+"CRP:{ER Sepsis Triage,LacticAcid}",-0.020292941480875015
+"CRP:{ER Sepsis Triage,Leucocytes}",0.07525268942117691
+CRP:{ER Sepsis Triage},4.076131820678711
+"CRP:{ER Triage,LacticAcid}",0.008272014558315277
+"CRP:{ER Triage,Leucocytes}",0.011387661099433899
+CRP:{ER Triage},0.6344362497329712
+"CRP:{IV Antibiotics,LacticAcid}",-0.029869917780160904
+"CRP:{IV Antibiotics,Leucocytes}",-0.011961836367845535
+CRP:{IV Antibiotics},-0.07626372575759888
+"CRP:{IV Liquid,LacticAcid}",0.014667939394712448
+"CRP:{IV Liquid,Leucocytes}",0.03989826515316963
+CRP:{IV Liquid},0.19449156522750854
+"CRP:{LacticAcid,Leucocytes}",0.2928861677646637
+CRP:{LacticAcid},2.504589319229126
+CRP:{Leucocytes},623.809814453125
+CRP:{Release A},0.019139841198921204
+CRP:{Return ER},-0.007308077998459339
+CRP:{▶},0.09311878681182861
+"ER Registration:{CRP,Leucocytes}",0.012718090787529945
+ER Registration:{CRP},0.047708965837955475
+ER Registration:{ER Sepsis Triage},0.10809364914894104
+ER Registration:{IV Antibiotics},0.015435897745192051
+ER Registration:{IV Liquid},0.16777634620666504
+ER Registration:{LacticAcid},0.011387661099433899
+ER Registration:{Leucocytes},0.07851669192314148
+ER Registration:{▶},593.4300537109375
+ER Sepsis Triage:{Admission IC},0.0144253671169281
+ER Sepsis Triage:{Admission NC},0.015499336645007133
+"ER Sepsis Triage:{CRP,Leucocytes}",0.019072558730840683
+ER Sepsis Triage:{CRP},0.09625464677810669
+"ER Sepsis Triage:{ER Registration,ER Triage}",6.285489559173584
+ER Sepsis Triage:{ER Registration},0.11676923930644989
+"ER Sepsis Triage:{ER Triage,LacticAcid}",0.010430273599922657
+"ER Sepsis Triage:{ER Triage,Leucocytes}",-0.0005514603108167648
+ER Sepsis Triage:{ER Triage},513.9735717773438
+ER Sepsis Triage:{IV Liquid},0.05381736159324646
+"ER Sepsis Triage:{LacticAcid,Leucocytes}",0.05442732572555542
+ER Sepsis Triage:{LacticAcid},0.27273866534233093
+ER Sepsis Triage:{Leucocytes},0.012915190309286118
+ER Sepsis Triage:{▶},0.07092924416065216
+"ER Triage:{CRP,ER Registration}",0.004086936358362436
+ER Triage:{CRP},0.09385959059000015
+"ER Triage:{ER Registration,IV Antibiotics}",0.017190728336572647
+"ER Triage:{ER Registration,IV Liquid}",0.1218811571598053
+"ER Triage:{ER Registration,Leucocytes}",0.0049775829538702965
+ER Triage:{ER Registration},544.2528076171875
+ER Triage:{IV Antibiotics},0.08630061149597168
+ER Triage:{IV Liquid},0.2506803274154663
+ER Triage:{LacticAcid},0.01759376935660839
+ER Triage:{Leucocytes},0.040274132043123245
+ER Triage:{▶},0.0549638569355011
+"IV Antibiotics:{CRP,ER Sepsis Triage}",0.05524749681353569
+"IV Antibiotics:{CRP,IV Liquid,LacticAcid}",0.006740087643265724
+"IV Antibiotics:{CRP,IV Liquid,Leucocytes}",0.008832556195557117
+"IV Antibiotics:{CRP,IV Liquid}",0.23071879148483276
+"IV Antibiotics:{CRP,LacticAcid}",0.12917110323905945
+"IV Antibiotics:{CRP,Leucocytes}",0.050189562141895294
+IV Antibiotics:{CRP},0.13005532324314117
+"IV Antibiotics:{ER Sepsis Triage,IV Liquid}",0.09747623652219772
+"IV Antibiotics:{ER Sepsis Triage,LacticAcid}",0.05681101232767105
+"IV Antibiotics:{ER Sepsis Triage,Leucocytes}",0.013648251071572304
+IV Antibiotics:{ER Sepsis Triage},0.7451126575469971
+IV Antibiotics:{ER Triage},0.0076023126021027565
+"IV Antibiotics:{IV Liquid,LacticAcid,Leucocytes}",0.009318962693214417
+"IV Antibiotics:{IV Liquid,LacticAcid}",0.1944671869277954
+"IV Antibiotics:{IV Liquid,Leucocytes}",0.05756052955985069
+IV Antibiotics:{IV Liquid},173.85205078125
+"IV Antibiotics:{LacticAcid,Leucocytes}",0.2420809417963028
+IV Antibiotics:{LacticAcid},1.0369133949279785
+IV Antibiotics:{Leucocytes},0.2737066149711609
+"IV Liquid:{Admission NC,CRP,LacticAcid}",0.008953448385000229
+"IV Liquid:{Admission NC,CRP}",0.0048102643340826035
+IV Liquid:{Admission NC},0.17040163278579712
+"IV Liquid:{CRP,ER Sepsis Triage,LacticAcid}",0.008787781931459904
+"IV Liquid:{CRP,ER Sepsis Triage,Leucocytes}",0.09110552817583084
+"IV Liquid:{CRP,ER Sepsis Triage}",0.16641294956207275
+"IV Liquid:{CRP,LacticAcid,Leucocytes}",0.015191927552223206
+"IV Liquid:{CRP,LacticAcid}",0.0594591423869133
+"IV Liquid:{CRP,Leucocytes}",0.06460484862327576
+IV Liquid:{CRP},1.1234369277954102
+IV Liquid:{ER Registration},0.16440019011497498
+"IV Liquid:{ER Sepsis Triage,ER Triage}",1.643200159072876
+"IV Liquid:{ER Sepsis Triage,LacticAcid}",0.1340467929840088
+"IV Liquid:{ER Sepsis Triage,Leucocytes}",0.032645005732774734
+IV Liquid:{ER Sepsis Triage},61.92411804199219
+IV Liquid:{ER Triage},0.1090429425239563
+IV Liquid:{IV Antibiotics},0.058231957256793976
+"IV Liquid:{LacticAcid,Leucocytes}",0.13849933445453644
+IV Liquid:{LacticAcid},1.4889605045318604
+IV Liquid:{Leucocytes},0.861778736114502
+IV Liquid:{▶},0.12239251285791397
+"LacticAcid:{Admission IC,CRP}",0.012081620283424854
+"LacticAcid:{Admission IC,Leucocytes}",0.005048823077231646
+LacticAcid:{Admission IC},0.26743367314338684
+LacticAcid:{Admission NC},0.049000851809978485
+"LacticAcid:{CRP,ER Sepsis Triage}",0.014343660324811935
+"LacticAcid:{CRP,ER Triage}",0.008787781931459904
+"LacticAcid:{CRP,IV Liquid,Leucocytes}",0.010807921178638935
+"LacticAcid:{CRP,IV Liquid}",0.12467045336961746
+"LacticAcid:{CRP,Leucocytes}",0.17714238166809082
+LacticAcid:{CRP},32.859771728515625
+LacticAcid:{ER Registration},0.09640230238437653
+LacticAcid:{ER Sepsis Triage},2.416431427001953
+LacticAcid:{ER Triage},0.15084198117256165
+LacticAcid:{IV Antibiotics},0.18848857283592224
+"LacticAcid:{IV Liquid,Leucocytes}",0.02010432444512844
+LacticAcid:{IV Liquid},0.11676093935966492
+LacticAcid:{Leucocytes},3.3807106018066406
+"Leucocytes:{Admission IC,Admission NC}",0.005272559821605682
+"Leucocytes:{Admission IC,CRP}",-0.0229348111897707
+"Leucocytes:{Admission IC,IV Liquid,LacticAcid}",0.0290901530534029
+"Leucocytes:{Admission IC,LacticAcid}",0.058581769466400146
+Leucocytes:{Admission IC},0.10804307460784912
+"Leucocytes:{Admission NC,CRP}",0.12282967567443848
+"Leucocytes:{Admission NC,ER Sepsis Triage}",0.06241818144917488
+"Leucocytes:{Admission NC,IV Liquid}",-0.0033113863319158554
+"Leucocytes:{Admission NC,LacticAcid}",0.01921740174293518
+Leucocytes:{Admission NC},20.395620346069336
+"Leucocytes:{CRP,ER Sepsis Triage}",0.004652503877878189
+"Leucocytes:{CRP,ER Triage}",0.005279898643493652
+"Leucocytes:{CRP,IV Liquid}",0.005180301610380411
+"Leucocytes:{CRP,LacticAcid}",0.4282831847667694
+Leucocytes:{CRP},7.824145317077637
+"Leucocytes:{ER Registration,LacticAcid}",0.00556061090901494
+Leucocytes:{ER Registration},0.4667358994483948
+"Leucocytes:{ER Sepsis Triage,ER Triage}",0.017190728336572647
+"Leucocytes:{ER Sepsis Triage,IV Antibiotics}",0.0076023126021027565
+"Leucocytes:{ER Sepsis Triage,LacticAcid}",0.1178092211484909
+Leucocytes:{ER Sepsis Triage},44.39008331298828
+"Leucocytes:{ER Triage,LacticAcid}",5.525101661682129
+Leucocytes:{ER Triage},0.8418360948562622
+"Leucocytes:{IV Antibiotics,LacticAcid}",-0.007872197777032852
+Leucocytes:{IV Antibiotics},0.35290950536727905
+"Leucocytes:{IV Liquid,LacticAcid}",0.008576152846217155
+Leucocytes:{IV Liquid},0.17990301549434662
+Leucocytes:{LacticAcid},73.76091766357422
+Leucocytes:{Release A},0.01446301769465208
+Leucocytes:{▶},0.05926236882805824
+"Release A:{Admission IC,Admission NC}",0.014925193041563034
+"Release A:{Admission NC,CRP,Leucocytes}",-0.00570134911686182
+"Release A:{Admission NC,CRP}",0.09428364038467407
+"Release A:{Admission NC,LacticAcid}",0.005071181338280439
+"Release A:{Admission NC,Leucocytes}",0.1153649091720581
+Release A:{Admission NC},1.2388310432434082
+"Release A:{CRP,IV Antibiotics}",0.01456828135997057
+"Release A:{CRP,IV Liquid,Leucocytes}",0.005460571497678757
+"Release A:{CRP,Leucocytes}",1.290310263633728
+Release A:{CRP},7.6827192306518555
+Release A:{IV Antibiotics},0.03241005912423134
+Release A:{IV Liquid},2.6910715103149414
+Release A:{LacticAcid},0.008351502940058708
+Release A:{Leucocytes},1.6958434581756592
+"Release B:{Admission IC,LacticAcid}",0.014873145148158073
+Release B:{Admission NC},0.16544881463050842
+Release B:{CRP},0.18280991911888123
+Release B:{IV Antibiotics},0.004709185566753149
+Release B:{IV Liquid},0.013413670472800732
+Release B:{LacticAcid},0.02309815026819706
+Release B:{Leucocytes},0.15700022876262665
+Release C:{Admission NC},0.04563159868121147
+Release C:{CRP},0.07596659660339355
+Release C:{Leucocytes},0.039044156670570374
+Release D:{Admission NC},0.04555276408791542
+Release D:{CRP},0.3272950351238251
+Release D:{Leucocytes},0.1256851851940155
+Release E:{CRP},0.015392821282148361
+Release E:{LacticAcid},0.05937599018216133
+Release E:{Leucocytes},0.0038782621268182993
+"Return ER:{Leucocytes,Release A}",0.014939343556761742
+Return ER:{Leucocytes},0.014939343556761742
+Return ER:{Release A},52.887264251708984
+Return ER:{Release C},0.09758088737726212
+Return ER:{Release D},0.13849914073944092
+Return ER:{Release E},0.005277013406157494
+"■:{Admission NC,CRP}",0.008832556195557117
+■:{Admission NC},0.17339567840099335
+"■:{CRP,IV Antibiotics}",0.008085044100880623
+"■:{CRP,Leucocytes}",0.2488395720720291
+"■:{CRP,Release B}",0.016726050525903702
+"■:{CRP,Release D}",0.014338022097945213
+"■:{CRP,Return ER}",0.01374487392604351
+■:{CRP},0.03222867101430893
+"■:{ER Sepsis Triage,Leucocytes}",0.018624385818839073
+■:{ER Sepsis Triage},0.6493675708770752
+■:{ER Triage},-0.004002172499895096
+"■:{IV Antibiotics,IV Liquid}",0.01461823657155037
+■:{IV Antibiotics},1.0337530374526978
+"■:{IV Liquid,Return ER}",0.011387661099433899
+■:{IV Liquid},0.08744366466999054
+"■:{LacticAcid,Leucocytes}",2.093538284301758
+"■:{LacticAcid,Release A}",0.008953448385000229
+"■:{LacticAcid,Return ER}",0.008855238556861877
+■:{LacticAcid},0.21469172835350037
+"■:{Leucocytes,Release A}",0.07488709688186646
+"■:{Leucocytes,Release B}",0.009661409072577953
+■:{Leucocytes},0.10994744300842285
+■:{Release A},161.49630737304688
+■:{Release B},0.7694171071052551
+■:{Release C},0.12366867065429688
+■:{Release D},0.0932176411151886
+■:{Release E},0.5723676681518555
+■:{Return ER},97.88912200927734

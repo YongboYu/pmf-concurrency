@@ -1,0 +1,33 @@
+series_key,forecasted_total
+Block Purchase Order Item,3.3249881267547607
+Cancel Goods Receipt,133.1136474609375
+Cancel Invoice Receipt,1130.8203125
+Cancel Subsequent Invoice,0.7520127892494202
+Change Approval for Purchase Order,47.63990020751953
+Change Delivery Indicator,195.23159790039062
+Change Price,5041.6640625
+Change Quantity,10893.462890625
+Change Storage Location,0.8896623253822327
+Clear Invoice,166146.5625
+Create Purchase Order Item,212074.59375
+Create Purchase Requisition Item,132136.65625
+Delete Purchase Order Item,6055.00830078125
+Reactivate Purchase Order Item,0.6815050840377808
+Receive Order Confirmation,33425.0625
+Record Goods Receipt,204127.09375
+Record Invoice Receipt,167296.359375
+Release Purchase Order,5.657903671264648
+Release Purchase Requisition,178.4978790283203
+Remove Payment Block,35035.7578125
+SRM: Awaiting Approval,184.3451690673828
+SRM: Change was Transmitted,184.3451690673828
+SRM: Complete,184.3451690673828
+SRM: Created,184.3451690673828
+SRM: Document Completed,184.3451690673828
+SRM: In Transfer to Execution Syst.,184.3451690673828
+SRM: Ordered,184.3451690673828
+Update Order Confirmation,0.2288510501384735
+Vendor creates debit memo,78.54861450195312
+Vendor creates invoice,185140.90625
+■,157865.46875
+▶,209267.5

@@ -1,0 +1,14 @@
+{
+  "run": "outputs_tpatm1/Hospital_Billing_pmf",
+  "tPAT": -1.0,
+  "n_values": 262710,
+  "n_values_differ": 41286,
+  "n_weekly_counts": 37530,
+  "n_weekly_counts_differ": 13645,
+  "max_weekly_relative_change": 307.005859375,
+  "n_weekly_counts_enter_or_leave": 34,
+  "n_windows": 139,
+  "n_nets_topology_differ": 2,
+  "n_nets_frequencies_differ": 4,
+  "n_nets_not_reproduced": 0
+}

@@ -1,0 +1,12 @@
+series_key,forecasted_total
+Change Approval for Purchase Order→Release Purchase Order→Change Approval for Purchase Order,3.4412426948547363
+Change Quantity→Vendor creates invoice→Change Quantity,1.239662766456604
+Clear Invoice→Record Invoice Receipt→Clear Invoice,125.056884765625
+Clear Invoice→Remove Payment Block→Clear Invoice,4.316569805145264
+Record Goods Receipt→Cancel Goods Receipt→Record Goods Receipt,2.0795557498931885
+Record Goods Receipt→Record Invoice Receipt→Record Goods Receipt,0.3046616315841675
+Record Goods Receipt→Vendor creates invoice→Record Goods Receipt,187.88145446777344
+Record Invoice Receipt→Cancel Invoice Receipt→Record Invoice Receipt,1.0829596519470215
+Record Invoice Receipt→Clear Invoice→Record Invoice Receipt,21.471343994140625
+Release Purchase Order→Change Approval for Purchase Order→Release Purchase Order,12.902498245239258
+Vendor creates invoice→Record Goods Receipt→Vendor creates invoice,188.02081298828125

@@ -1,0 +1,14 @@
+{
+  "run": "outputs_tpatm1/Sepsis_pmf",
+  "tPAT": -1.0,
+  "n_values": 420070,
+  "n_values_differ": 57451,
+  "n_weekly_counts": 60010,
+  "n_weekly_counts_differ": 24979,
+  "max_weekly_relative_change": 441.7037048339844,
+  "n_weekly_counts_enter_or_leave": 154,
+  "n_windows": 85,
+  "n_nets_topology_differ": 0,
+  "n_nets_frequencies_differ": 0,
+  "n_nets_not_reproduced": 0
+}

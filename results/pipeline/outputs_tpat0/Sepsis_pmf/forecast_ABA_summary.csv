@@ -1,0 +1,22 @@
+series_key,forecasted_total
+Admission NC→CRP→Admission NC,0.018197230994701385
+Admission NC→ER Sepsis Triage→Admission NC,0.06258443742990494
+Admission NC→LacticAcid→Admission NC,0.09432177990674973
+Admission NC→Leucocytes→Admission NC,0.12367863953113556
+CRP→Admission IC→CRP,0.42818474769592285
+CRP→Admission NC→CRP,0.7009830474853516
+CRP→IV Antibiotics→CRP,0.014814149588346481
+CRP→IV Liquid→CRP,0.005498150363564491
+CRP→LacticAcid→CRP,0.14127424359321594
+CRP→Leucocytes→CRP,223.2086639404297
+LacticAcid→Admission IC→LacticAcid,0.03566623479127884
+LacticAcid→Admission NC→LacticAcid,-0.03396299481391907
+LacticAcid→CRP→LacticAcid,0.26647987961769104
+LacticAcid→IV Antibiotics→LacticAcid,0.05244753137230873
+LacticAcid→Leucocytes→LacticAcid,0.43612393736839294
+Leucocytes→Admission IC→Leucocytes,0.11156271398067474
+Leucocytes→Admission NC→Leucocytes,0.8176889419555664
+Leucocytes→CRP→Leucocytes,288.1671447753906
+Leucocytes→ER Registration→Leucocytes,0.014044208452105522
+Leucocytes→IV Antibiotics→Leucocytes,0.007475338876247406
+Leucocytes→LacticAcid→Leucocytes,0.9426257014274597
