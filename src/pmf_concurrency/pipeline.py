@@ -177,7 +177,7 @@ def save_forecasts(
         )
 
 
-def _periods(log: SplitLog, test_days: pd.DatetimeIndex) -> dict[str, Any]:
+def summary_periods(log: SplitLog, test_days: pd.DatetimeIndex) -> dict[str, Any]:
     """Training period of the log, and the test days the series and windows cover."""
     return {
         "train_period": {"start": str(log.train_start), "end": str(log.train_end)},
@@ -287,7 +287,7 @@ def run_pmf_experiment(
 
     summary = write_summary(
         output_dir,
-        _periods(log, test["A"].index),
+        summary_periods(log, test["A"].index),
         {"tD": tD, "tL1L": tL1L, "tL2L": tL2L, "tPAT": tPAT},
     )
     metrics = summary["structural_metrics"]

@@ -10,6 +10,7 @@ import subprocess  # nosec B404
 from functools import cache
 from typing import Any
 
+from .families import ALL_FAMILIES
 from .petri_net import causal_net_to_wf_net
 
 
@@ -33,8 +34,9 @@ def _binding_tau_label_text(freq: float, label_prefix: str) -> str:
     return f"{label_prefix}={_freq_label(freq)}"
 
 
-#: Per-window families whose rendered net carries a window title.
-_TITLED_FAMILIES = {"forecast", "re_mined", "direct_mined"}
+#: Families whose rendered net carries a window title: all but Static, whose net is the
+#: same in every window.
+_TITLED_FAMILIES = set(ALL_FAMILIES) - {"static"}
 
 
 def _weekly_model_title(metadata: dict[str, Any]) -> str | None:

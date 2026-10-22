@@ -22,4 +22,8 @@ Modules, in the order the pipeline uses them:
     paths               where a run's outputs go
     reproducibility     seeds and deterministic ordering
     fodina              the Fodina miner
+
+Built apart from the pipeline:
+
+    history_models      the history families of every evaluation window
 """

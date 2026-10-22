@@ -193,6 +193,22 @@ def test_renderer_uses_weekly_title_for_direct_mined_models() -> None:
     assert "dependency place" not in dot
 
 
+def test_renderer_uses_weekly_title_for_expanding_models() -> None:
+    model = _alternative_input_model()
+    model["metadata"] = {
+        "type": "sliding_expanding",
+        "dataset": "BPI2017",
+        "window": 2,
+        "start_date": "20210102",
+        "end_date": "20210108",
+    }
+
+    dot = generate_petri_net_dot(model)
+
+    assert "BPI2017_expanding_window2_20210102_20210108" in dot
+    assert "dependency place" not in dot
+
+
 def test_without_graphviz_no_pdf_is_drawn_and_the_run_warns_once(
     monkeypatch, capsys, tmp_path
 ) -> None:
