@@ -1,0 +1,9 @@
+{
+  "LANG": "en_US.UTF-8",
+  "MKL_NUM_THREADS": "8",
+  "OMP_NUM_THREADS": "8",
+  "PATH": "/home/yongbo/pmf-history/.venv/bin:/home/yongbo/.local/bin:/home/yongbo/.local/bin:/home/yongbo/.local/bin:/home/yongbo/micromamba/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+  "PYTHONUNBUFFERED": "1",
+  "USER": "yongbo",
+  "UV_RUN_RECURSION_DEPTH": "1"
+}

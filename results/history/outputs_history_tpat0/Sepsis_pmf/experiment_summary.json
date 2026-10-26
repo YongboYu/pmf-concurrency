@@ -1,0 +1,26 @@
+{
+  "train_period": {
+    "start": "2014-01-03",
+    "end": "2015-01-05"
+  },
+  "test_period": {
+    "start": "2015-01-06",
+    "end": "2015-04-06"
+  },
+  "test_days": 91,
+  "thresholds": {
+    "tD": 0.5,
+    "tL1L": 0.5,
+    "tL2L": 0.5,
+    "tPAT": 0.0
+  },
+  "structural_metrics": {
+    "path": "outputs_history_tpat0/Sepsis_pmf/structural_metrics.csv",
+    "rows": 170,
+    "windows": 85,
+    "families": [
+      "persistence",
+      "expanding"
+    ]
+  }
+}

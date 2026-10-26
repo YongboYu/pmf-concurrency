@@ -1,6 +1,6 @@
 note: 'Written by scripts/paper.py collect. Do not edit: collect again.'
-created_utc: '2026-10-15T09:25:39Z'
-collected_by_commit: 635a5b29dadf68b2b8dc5112859b3f960c1c2294
+created_utc: '2026-10-26T10:50:22Z'
+collected_by_commit: cd3debc2e429634e6fc4b25761c7392bd1ea05d4
 campaigns:
   reduced:
     dir: campaign1
@@ -44,6 +44,26 @@ campaigns:
       unavailable: 8
       timeout: 287
       oom: 327
+  history:
+    dir: campaign3
+    git_commit: e20d58f6e45c69725ff52f6472cb7a0cff502c63
+    host: HP-Z4-G4-LNX
+    cpu: Intel(R) Xeon(R) W-2245 CPU @ 3.90GHz
+    ram_gb: 46.8
+    os: Linux-6.8.0-124-generic-x86_64-with-glibc2.35
+    python: 3.12.12
+    pm4py: 2.7.19.8
+    concurrency: 2
+    mem_gb: 12.0
+    time_min: 20.0
+    omp_num_threads: '8'
+    mkl_num_threads: '8'
+    gate_passed: true
+    n_units: 2022
+    status_counts:
+      ok: 1914
+      timeout: 55
+      oom: 53
 pipeline:
   '-1.0':
     dir: pipeline/outputs_tpatm1
@@ -69,6 +89,17 @@ pipeline:
       bpi2019: 96dd118494dd66f0a9f5feb88c5ae873bbe9d7c5a6270f3114b7829a9e31fae0
       sepsis: 66cd3a85f70a3e9b3e8a76e5e0cab9590b18556fe0fa9c9b5262d962bed74698
       hospital_billing: 3667617a5164b827d27517c0de5d84056ab7ce43914e2949104f279d27c20377
+history:
+  dir: history/outputs_history_tpat0
+  tpat: 0.0
+  families:
+  - persistence
+  - expanding
+  models_sha256:
+    bpi2017: 2990d0c60541437a76481826ff6b650d273be5f5409b41bf8b08f5021f2f7619
+    bpi2019: 666f5ceee53be19e3c1c9fa5d6ccbec90bdc144fd77bc5b5b29b52d53b17bcb0
+    sepsis: ca1facb22e1e060ccd8b2da5d552c626e6e12237ecf218bc52f73cd9818390a9
+    hospital_billing: 1c42ce6e0ca8dd3bc62432eb6518386c782fca948c1fda532086b88f104e3171
 logs:
   bpi2017:
     file: BPI2017.xes
@@ -107,7 +138,24 @@ files:
   campaign2/expected_units.csv: a81feb8e9e7ae85890c7d4ecc6effa1d19a628a2ebbbdbcfafc2bc8dbd2546c8
   campaign2/gate.json: 9b2257056763a343985905a8233d35c9efd5c1fcf8f0caae9989953f772e86c9
   campaign2/near_budget.csv: fd11b924663c2bd6b95399a5a65e9c9974fe626e4892116554f84e40150caf89
+  campaign3/batches.csv: 24d7d8ce7a17b4c941127abd289d205a5561d1a0ee8bb8aea3d3d822ec23afd4
+  campaign3/campaign_manifest.json: ccdf6b465f2318e33492cdd4cad6211ff89d3604e79054d51fbe9c5d59e805f3
+  campaign3/environment.json: 6d3ae7124dcf9ae13a3a8dca7080516f52467e2339bb97ec39e3ef7083b391ae
+  campaign3/evaluation.csv: 3823a65c766aca6545f109eb672cebba20fdf3a7c33b4454e06feca46419563d
+  campaign3/evaluation_failures.csv: ebb7ca8d2fa25034eef77cf38a71fc75afc753e666347d12e8fcf864360439e3
+  campaign3/evaluation_summary.csv: 561fb82af699fa29354d10f08306c10d30683212e9d338cd6d4e13bd35244c7d
+  campaign3/expected_units.csv: 98567375d230b8d2fd98b1ab4673c82216a27c55a86b1d0fff183b80fbebcedb
+  campaign3/gate.json: c7cef100a012c22e8e8ea15292baeb0757e81f5f5ed20facd01eb033153a041e
+  campaign3/near_budget.csv: 00576bd822dfffdbecada0ba8e1230016af128ade7a83a983c3d6c1eb55233ca
   figure2/window_1_forecast.json: 54b7e3bf26bf5efe80c12d2702034091566a608bbf10e9dfcf60fa46a85c0ae3
+  history/outputs_history_tpat0/BPI2017_pmf/experiment_summary.json: 0f46a6afe89508dcf924c470b42d7ff0dbe506834d3e1b59646bac7a1b63872e
+  history/outputs_history_tpat0/BPI2017_pmf/structural_metrics.csv: e0a90faaf930b63c0613c151851a0dd025c84dce5207148e0fb08a6454038478
+  history/outputs_history_tpat0/BPI2019_pmf/experiment_summary.json: a6d08c959c66afb2c6ae3fa2fa3729c857920a4cdb14e7a20cba283a3fe7fb8d
+  history/outputs_history_tpat0/BPI2019_pmf/structural_metrics.csv: 664788ff458cd052e045c244d262420dbc27076e0d8a141191a2f5bb7c9b0473
+  history/outputs_history_tpat0/Hospital_Billing_pmf/experiment_summary.json: f2a0902d7883ac643df2417f329dbe686d1be5738f7670067ce261db3c65f942
+  history/outputs_history_tpat0/Hospital_Billing_pmf/structural_metrics.csv: e6a7df6958552cc8d6cfe0cc699d93a6248d671a22574ab69791aead2b8be28a
+  history/outputs_history_tpat0/Sepsis_pmf/experiment_summary.json: afb8322ffc4dd983fdc61516d37592c55d6f527e66a1d4b7d115df0a0fea8c5a
+  history/outputs_history_tpat0/Sepsis_pmf/structural_metrics.csv: bdc169a1b99812be0fd361c9ded1255babc542d01ef1de32f0205d03c88bda55
   logs.csv: 34b97196e06d17341f1f7eb8009eb06e8aec157ba0020bab0418a81c999aae83
   pipeline/outputs_tpat0/BPI2017_pmf/experiment_summary.json: 6ec0d28e94895d63ac28148316dcf2bbeb55f335fa76f1f6e041794ab0b2b60f
   pipeline/outputs_tpat0/BPI2017_pmf/forecast_AB_summary.csv: de82491f7fe5d3bea8e86f541f3fd5d3f0d464192a70109a90346676b429b4d4
@@ -173,5 +221,5 @@ files:
   pipeline/outputs_tpatm1/Sepsis_pmf/median_choice.json: dadda4ab18ffc7e2675519af62e1ace75b29363c503f4924b0e3b3ab3430a919
   pipeline/outputs_tpatm1/Sepsis_pmf/structural_metrics.csv: 21a76fb5228671cc34bbd9f68322d769d781ff971b4b17008f83af6f230deffb
   pipeline/outputs_tpatm1/run_manifest.json: a314ea00cd206307a4d6bf11b7dff31dd4666d30fa11f6d0a1bc4998dc2086f0
-  unfinishable_nets.csv: 894fb140c12b548798f61bc083ba7ae7ae7136dd24ff5b914fd1e282ccfc4070
+  unfinishable_nets.csv: 3af43b8aae55d19233ef5a711c971ab5093de28e90e68ec9fad0c93c5daf2203
   window_composition.csv: 8c99c29b54dc909c55952dbaeaf4b8d13082dec02f787be31453d444d60816d4

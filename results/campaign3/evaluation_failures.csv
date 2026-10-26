@@ -1,0 +1,5 @@
+dataset,mode,evaluator,reduce_level,model_type,guard_status,failure_category,n_units
+bpi2019,window,er,tau,expanding,timeout,time_budget,55
+bpi2019,window,er,tau,persistence,oom,memory_budget,16
+hospital_billing,window,er,tau,persistence,oom,memory_budget,17
+sepsis,window,er,tau,persistence,oom,memory_budget,20

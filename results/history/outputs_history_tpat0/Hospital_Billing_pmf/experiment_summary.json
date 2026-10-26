@@ -1,0 +1,26 @@
+{
+  "train_period": {
+    "start": "2013-07-04",
+    "end": "2015-02-04"
+  },
+  "test_period": {
+    "start": "2015-02-05",
+    "end": "2015-06-29"
+  },
+  "test_days": 145,
+  "thresholds": {
+    "tD": 0.5,
+    "tL1L": 0.5,
+    "tL2L": 0.5,
+    "tPAT": 0.0
+  },
+  "structural_metrics": {
+    "path": "outputs_history_tpat0/Hospital_Billing_pmf/structural_metrics.csv",
+    "rows": 278,
+    "windows": 139,
+    "families": [
+      "persistence",
+      "expanding"
+    ]
+  }
+}
