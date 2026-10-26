@@ -10,6 +10,7 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from pmf_concurrency.results import Pooled, ResultsError
@@ -103,3 +104,68 @@ def test_the_submitted_rows_are_read_by_log_label_and_row(paper, tmp_path):
 def test_a_submitted_table_of_another_shape_is_refused(paper, tmp_path):
     with pytest.raises(ResultsError, match="cannot find"):
         paper.submitted_rows(_manuscript(tmp_path, rows2=23))
+
+
+def test_a_row_the_submitted_table_lacks_is_marked_whole(paper):
+    assert (
+        paper._math(("0.912", "0.031"), paper.ABSENT)
+        == "$\\rev{0.912}_{\\pm\\rev{0.031}}$"
+    )
+    assert paper._math((paper.DAGGER, None), paper.ABSENT) == "\\rev{$^{\\dagger}$}"
+    assert paper._text("Persistence", paper.ABSENT) == "\\rev{Persistence}"
+
+
+def _history_units(empty: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Alignment units of every log: two windows, five families at tPAT 0."""
+    precision = {
+        "forecast": 0.9,
+        "direct_mined": 0.8,
+        "static": 0.5,
+        "persistence": 0.7,
+        "expanding": 0.5,
+    }
+    rows = []
+    for key in ("bpi2017", "bpi2019", "sepsis", "hospital_billing"):
+        for window in (1, 2):
+            for family, p in precision.items():
+                f1 = {"forecast": 0.9, "persistence": 0.7, "expanding": 0.6}.get(family)
+                reason = ""
+                if key == "bpi2017" and family == "persistence":
+                    p, f1 = 0.85, 0.95 if window == 1 else f1
+                if key == "hospital_billing" and family == "expanding":
+                    p += 0.02
+                if key == "sepsis" and family == "forecast" and window == 2:
+                    p, f1, reason = float("nan"), float("nan"), "empty model"
+                if family == empty and key == "sepsis":
+                    reason = "empty model"
+                rows.append((key, 0.0, window, family, p, f1, reason))
+            rows.append((key, -1.0, window, "forecast", 0.1, 0.1, ""))
+    units = pd.DataFrame(
+        rows,
+        columns=[
+            "dataset",
+            "tpat",
+            "window",
+            "model_type",
+            "precision",
+            "f1",
+            "guard_reason",
+        ],
+    ).assign(evaluator="alignment", guard_status="ok")
+    history = units["model_type"].isin(("persistence", "expanding"))
+    return units[~history], units[history]
+
+
+def test_history_numbers_compare_with_the_families_they_derive_from(paper):
+    numbers = paper.history_numbers(*_history_units())
+    assert numbers["ExpandingStaticPrecisionMaxDiff"] == "0.020"
+    assert numbers["PersistenceLessPreciseLogs"] == "three"
+    assert numbers["ForecastOverPersistenceWins"] == "6"
+    assert numbers["ForecastOverPersistenceWindows"] == "7"
+    assert numbers["ForecastOverExpandingWins"] == "7"
+    assert numbers["ForecastOverExpandingWindows"] == "7"
+
+
+def test_an_empty_history_net_is_refused(paper):
+    with pytest.raises(ResultsError, match="empty"):
+        paper.history_numbers(*_history_units(empty="persistence"))

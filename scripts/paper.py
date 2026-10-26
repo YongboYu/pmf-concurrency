@@ -1,19 +1,21 @@
 """Build the paper's tables, figure and prose numbers from one results directory.
 
-    collect  copy two gated campaigns and their pipeline runs into a results directory,
+    collect  copy the gated campaigns and their pipeline runs into a results directory,
              with the Table 1 statistics, the net audit and MANIFEST.yaml
     build    write the manuscript's generated files from a results directory
     check    rebuild into a temporary directory and compare with a manuscript
 
 ``collect`` refuses a campaign whose gate did not pass, a campaign that evaluated
 other nets than the pipeline runs it is given, and a log other than the one the
-campaigns evaluated. ``build`` reads only the results directory and refuses it unless
-every file matches its hash in ``MANIFEST.yaml``.
+campaigns evaluated. The history campaign and root, given together, add Persistence
+and Expanding to Table 2. ``build`` reads only the results directory and refuses it
+unless every file matches its hash in ``MANIFEST.yaml``.
 
 Usage, from the project root:
     uv run python scripts/paper.py collect --out results \\
         --reduced-campaign campaigns/c1 --unreduced-campaign campaigns/c2 \\
-        --pipeline-roots outputs_tpat0 outputs_tpatm1 --data-dir data
+        --pipeline-roots outputs_tpat0 outputs_tpatm1 --data-dir data \\
+        --history-campaign campaigns/c3 --history-root outputs_history_tpat0
     uv run python scripts/paper.py build --results results --out manuscript/paper \\
         --highlight-against manuscript/submitted
     uv run python scripts/paper.py check --results results --manuscript manuscript/paper \\
@@ -49,9 +51,19 @@ import yaml
 from net_pair_figure import draw
 from omegaconf import OmegaConf
 
-from pmf_concurrency.campaign import TABLE2_ARMS, TABLE2_EVALUATORS, windows_of
+from pmf_concurrency.campaign import (
+    HISTORY_ARMS,
+    TABLE2_ARMS,
+    TABLE2_EVALUATORS,
+    windows_of,
+)
 from pmf_concurrency.data import load_event_log
-from pmf_concurrency.families import FAMILY_LABELS, MODEL_FAMILIES, model_json_path
+from pmf_concurrency.families import (
+    FAMILY_LABELS,
+    HISTORY_FAMILIES,
+    MODEL_FAMILIES,
+    model_json_path,
+)
 from pmf_concurrency.petri_net import unfinishable_places
 from pmf_concurrency.results import (
     CASE_CLASSES,
@@ -103,6 +115,9 @@ RUN_FILES = (
     *(f"forecast_{f}_summary.csv" for f in SERIES_FAMILIES),
 )
 
+#: Files copied from each log's directory in the history root.
+HISTORY_FILES = ("experiment_summary.json", "structural_metrics.csv")
+
 #: The net of Figure 2: (dataset, tPAT, window, family).
 FIGURE_NET = ("bpi2017", -1.0, 1, "forecast")
 
@@ -110,6 +125,12 @@ FIGURE_NET = ("bpi2017", -1.0, 1, "forecast")
 MIN_VALUES = 2
 
 DAGGER = "$^{\\dagger}$"
+
+#: The submitted cell of a row the submitted table lacks: every value differs from it.
+ABSENT = ""
+
+#: Value cells of a Table 2 row, after the model and tPAT cells.
+TABLE2_CELLS = 11
 
 WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight")
 
@@ -152,6 +173,26 @@ def _pipeline_runs(roots: list[Path]) -> dict[float, Path]:
     return runs
 
 
+def _history_root(root: Path) -> dict[float, Path]:
+    """tPAT -> the history root, once every log holds both history families."""
+    summaries = [
+        json.loads(p.read_text()) for p in root.glob("*_pmf/experiment_summary.json")
+    ]
+    tpats = {float(s["thresholds"]["tPAT"]) for s in summaries}
+    families = {tuple(s["structural_metrics"]["families"]) for s in summaries}
+    if (
+        len(summaries) != len(LOGS)
+        or tpats != set(HISTORY_ARMS)
+        or families != {HISTORY_FAMILIES}
+    ):
+        raise ResultsError(
+            f"{root}: expected {', '.join(HISTORY_FAMILIES)} for {len(LOGS)} logs at "
+            f"tPAT {sorted(HISTORY_ARMS)}, got {len(summaries)} logs, tPAT "
+            f"{sorted(tpats)}, families {sorted(families)}"
+        )
+    return {tpats.pop(): root}
+
+
 def _check_models(campaign: dict, runs: dict[float, Path], source: Path) -> None:
     """Every net a campaign evaluated is the net in the given pipeline run."""
     for label, entry in campaign["models"].items():
@@ -174,12 +215,17 @@ def _log_hashes(campaign_dir: Path) -> dict[str, str]:
     return {d: h.pop() for d, h in hashes.items()}
 
 
-def _audit(runs: dict[float, Path], grids: dict[str, pd.DataFrame]) -> pd.DataFrame:
-    """Unfinishable nets per (log, tPAT, family) over Table 2's arms and windows."""
+def _audit(
+    arms: list[tuple[Path, float, tuple[str, ...]]], grids: dict[str, pd.DataFrame]
+) -> pd.DataFrame:
+    """Unfinishable nets per (log, tPAT, family) over Table 2's arms and windows.
+
+    ``arms`` holds one (pipeline root, tPAT, families) per group of arms.
+    """
     rows = []
     for key, _ in LOGS:
-        for tpat, families in TABLE2_ARMS.items():
-            weekly = runs[tpat] / _dataset(key)[0] / "weekly_models"
+        for root, tpat, families in arms:
+            weekly = root / _dataset(key)[0] / "weekly_models"
             for family in families:
                 counts = [
                     unfinishable_places(
@@ -229,16 +275,29 @@ def collect(args: argparse.Namespace) -> int:
     out: Path = args.out
     if out.exists() and any(out.iterdir()):
         raise SystemExit(f"{out} exists and is not empty: collect into a new directory")
+    if (args.history_campaign is None) != (args.history_root is None):
+        raise SystemExit("give --history-campaign and --history-root together")
     campaigns = {"reduced": args.reduced_campaign, "unreduced": args.unreduced_campaign}
+    if args.history_campaign is not None:
+        campaigns["history"] = args.history_campaign
     for d in campaigns.values():
         read_campaign(d)  # the gate passed and the units equal the grid
     runs = _pipeline_runs(args.pipeline_roots)
-    for d in campaigns.values():
-        _check_models(json.loads((d / "campaign_manifest.json").read_text()), runs, d)
+    arms = [(runs[tpat], tpat, families) for tpat, families in TABLE2_ARMS.items()]
+    history_runs = {}
+    if args.history_root is not None:
+        history_runs = _history_root(args.history_root)
+        arms += [(history_runs[t], t, f) for t, f in HISTORY_ARMS.items()]
+    for role, d in campaigns.items():
+        _check_models(
+            json.loads((d / "campaign_manifest.json").read_text()),
+            history_runs if role == "history" else runs,
+            d,
+        )
 
     hashes = [_log_hashes(d) for d in campaigns.values()]
-    if hashes[0] != hashes[1]:
-        raise ResultsError("the two campaigns evaluated different logs")
+    if any(h != hashes[0] for h in hashes[1:]):
+        raise ResultsError("the campaigns evaluated different logs")
     log_entries, described, compositions, grids = {}, [], [], {}
     for key, _ in LOGS:
         log_file = args.data_dir / _dataset(key)[1]
@@ -256,7 +315,7 @@ def collect(args: argparse.Namespace) -> int:
     composition[
         ["dataset", *[c for c in composition.columns if c != "dataset"]]
     ].to_csv(out / "window_composition.csv", index=False)
-    _audit(runs, grids).to_csv(out / "unfinishable_nets.csv", index=False)
+    _audit(arms, grids).to_csv(out / "unfinishable_nets.csv", index=False)
 
     entries = {}
     for role, d in campaigns.items():
@@ -288,6 +347,25 @@ def collect(args: argparse.Namespace) -> int:
             "models_sha256": models,
         }
 
+    history = {}
+    for tpat, root in history_runs.items():
+        models = {}
+        for key, _ in LOGS:
+            name = _dataset(key)[0]
+            target = out / "history" / root.name / name
+            target.mkdir(parents=True)
+            for f in HISTORY_FILES:
+                shutil.copy2(root / name / f, target / f)
+            models[key] = names_and_bytes_sha256(
+                sorted((root / name / "weekly_models").glob("window_*.json"))
+            )
+        history = {
+            "dir": f"history/{root.name}",
+            "tpat": tpat,
+            "families": list(HISTORY_FAMILIES),
+            "models_sha256": models,
+        }
+
     key, tpat, window, family = FIGURE_NET
     net = model_json_path(
         runs[tpat] / _dataset(key)[0] / "weekly_models", window, family
@@ -308,6 +386,7 @@ def collect(args: argparse.Namespace) -> int:
         ).stdout.strip(),
         "campaigns": entries,
         "pipeline": pipeline,
+        **({"history": history} if history else {}),
         "logs": log_entries,
         "figure2": {
             "file": f"figure2/{net.name}",
@@ -516,56 +595,101 @@ def table2(
     manifest: dict,
     reduced: pd.DataFrame,
     submitted: list[list[str]] | None = None,
+    history: pd.DataFrame | None = None,
 ) -> str:
-    """Body rows: τ-reduced nets, case-complete replay, ER on window fragments."""
+    """Body rows: τ-reduced nets, case-complete replay, ER on window fragments.
+
+    With ``history``, the history campaign's units, Persistence and Expanding follow
+    Static. The submitted table lacks their rows, so all of each is marked.
+    """
+    groups: list[
+        tuple[tuple[str, ...], dict[float, tuple[str, ...]], pd.DataFrame, dict | None]
+    ] = [(MODEL_FAMILIES, TABLE2_ARMS, reduced, None)]
+    if history is not None:
+        groups.append((HISTORY_FAMILIES, HISTORY_ARMS, history, manifest["history"]))
+    n_rows = sum(len(arms[t]) for _, arms, _, _ in groups for t in arms)
     lines, row = [], 0
     for index, (key, label) in enumerate(LOGS):
-        lines.append(f"    \\multirow{{6}}{{*}}{{{label}}}")
-        for family in MODEL_FAMILIES:
-            settings = [t for t in (-1.0, 0.0) if family in TABLE2_ARMS[t]]
-            for i, tpat in enumerate(settings):
-                units = reduced[
-                    (reduced["dataset"] == key)
-                    & (reduced["tpat"] == tpat)
-                    & (reduced["model_type"] == family)
-                ]
-                by = {ev: units[units["evaluator"] == ev] for ev in TABLE2_EVALUATORS}
-                if i:
-                    name = ""
-                elif len(settings) == 1:
-                    name = FAMILY_LABELS[family]
-                else:
-                    name = (
-                        f"\\multirow{{{len(settings)}}}{{*}}{{{FAMILY_LABELS[family]}}}"
+        lines.append(f"    \\multirow{{{n_rows}}}{{*}}{{{label}}}")
+        for families, arms, campaign, run in groups:
+            for family in families:
+                settings = [t for t in (-1.0, 0.0) if family in arms.get(t, ())]
+                for i, tpat in enumerate(settings):
+                    units = campaign[
+                        (campaign["dataset"] == key)
+                        & (campaign["tpat"] == tpat)
+                        & (campaign["model_type"] == family)
+                    ]
+                    lines.append(
+                        _row(
+                            results,
+                            run or manifest["pipeline"][_tag(tpat)],
+                            key,
+                            family,
+                            tpat,
+                            units,
+                            _name(family, i, len(settings)),
+                            _submitted(submitted, row, run is not None),
+                        )
                     )
-                run = manifest["pipeline"][_tag(tpat)]
-                tok, aln, er = by["token_etc"], by["alignment"], by["er"]
-                cells = [
-                    _cell(_structure(results, run, key, family), 1, 4, 1, 4),
-                    _cell(pool(tok, "log_fitness"), 3, 5, 3),
-                    _cell(pool(tok, "precision"), 3, 5, 3),
-                    _cell(pool(tok, "perc_fit_traces"), 1, 5, 1, 4),
-                    _cell(pool(tok, "pct_prefix_mass_fit"), 1, 5, 1, 4),
-                    _cell(pool(aln, "log_fitness"), 3, 5, 3),
-                    _cell(pool(aln, "precision"), 3, 5, 3),
-                    _cell(pool(aln, "perc_fit_traces"), 1, 5, 1, 4),
-                    _cell(pool(er, "er"), 3, 6, 2, 5),
-                    _cell(pool(er, "fitting_ratio"), 4, 6, 3),
-                    _coverage(pool(er, "er")),
-                ]
-                old = submitted[row] if submitted else [None] * len(cells)
-                cells = [_math(c, o) for c, o in zip(cells, old, strict=True)]
-                row += 1
-                tpat_cell = f"${tpat:.1f}$"
-                lines.append(
-                    f"      & {name:<24} & {tpat_cell:<12} & "
-                    + " & ".join(cells)
-                    + " \\\\"
-                )
-            if family == "re_mined":
-                lines.append("      \\cmidrule(l){2-14}")
+                    if run is None:
+                        row += 1
+                if family == "re_mined":
+                    lines.append("      \\cmidrule(l){2-14}")
         lines.append("    \\midrule" if index < len(LOGS) - 1 else "    \\bottomrule")
     return "\n".join(lines) + "\n"
+
+
+def _name(family: str, i: int, n_settings: int) -> str:
+    """The model cell of a family's ``i``-th row."""
+    if i:
+        return ""
+    if n_settings == 1:
+        return FAMILY_LABELS[family]
+    return f"\\multirow{{{n_settings}}}{{*}}{{{FAMILY_LABELS[family]}}}"
+
+
+def _submitted(
+    submitted: list[list[str]] | None, row: int, new: bool
+) -> list[str] | None:
+    """The submitted cells a row is compared with, or None without highlighting."""
+    if submitted is None:
+        return None
+    return [ABSENT] * TABLE2_CELLS if new else submitted[row]
+
+
+def _row(
+    results: Path,
+    run: dict,
+    key: str,
+    family: str,
+    tpat: float,
+    units: pd.DataFrame,
+    name: str,
+    old: list[str] | None,
+) -> str:
+    """One Table 2 row of a family at one tPAT."""
+    by = {ev: units[units["evaluator"] == ev] for ev in TABLE2_EVALUATORS}
+    tok, aln, er = by["token_etc"], by["alignment"], by["er"]
+    cells = [
+        _cell(_structure(results, run, key, family), 1, 4, 1, 4),
+        _cell(pool(tok, "log_fitness"), 3, 5, 3),
+        _cell(pool(tok, "precision"), 3, 5, 3),
+        _cell(pool(tok, "perc_fit_traces"), 1, 5, 1, 4),
+        _cell(pool(tok, "pct_prefix_mass_fit"), 1, 5, 1, 4),
+        _cell(pool(aln, "log_fitness"), 3, 5, 3),
+        _cell(pool(aln, "precision"), 3, 5, 3),
+        _cell(pool(aln, "perc_fit_traces"), 1, 5, 1, 4),
+        _cell(pool(er, "er"), 3, 6, 2, 5),
+        _cell(pool(er, "fitting_ratio"), 4, 6, 3),
+        _coverage(pool(er, "er")),
+    ]
+    marks = old or [None] * len(cells)
+    cells = [_math(c, o) for c, o in zip(cells, marks, strict=True)]
+    tpat_cell = f"${tpat:.1f}$"
+    if old == [ABSENT] * TABLE2_CELLS:
+        name, tpat_cell = _text(name, ABSENT), _text(tpat_cell, ABSENT)
+    return f"      & {name:<24} & {tpat_cell:<12} & " + " & ".join(cells) + " \\\\"
 
 
 # build: prose numbers
@@ -766,6 +890,40 @@ def section5_numbers(
     return numbers
 
 
+def history_numbers(reduced: pd.DataFrame, history: pd.DataFrame) -> dict[str, str]:
+    """Persistence and Expanding against the families they derive from and Forecast.
+
+    Precision is Align-ETC precision pooled per log. The F1 counts are over the
+    windows where Forecast and the history family both have an alignment F1 at tPAT 0.
+    """
+    if (history["guard_reason"] == "empty model").any():
+        raise ResultsError("a history net is empty: revise the text")
+    units = pd.concat([reduced[reduced["tpat"] == 0.0], history])
+    aln = units[units["evaluator"] == "alignment"]
+
+    def precision(key: str, family: str) -> float:
+        cell = aln[(aln["dataset"] == key) & (aln["model_type"] == family)]
+        return pool(cell, "precision").mean
+
+    keys = [key for key, _ in LOGS]
+    gap = max(abs(precision(k, "expanding") - precision(k, "static")) for k in keys)
+    less = sum(precision(k, "persistence") < precision(k, "direct_mined") for k in keys)
+    numbers = {
+        "ExpandingStaticPrecisionMaxDiff": _fixed(gap, 3),
+        "PersistenceLessPreciseLogs": WORDS[less],
+    }
+    ok = aln[aln["guard_status"] == "ok"]
+    f1 = ok.pivot_table(index=["dataset", "window"], columns="model_type", values="f1")
+    for family in HISTORY_FAMILIES:
+        both = f1[["forecast", family]].dropna()
+        name = FAMILY_LABELS[family]
+        numbers[f"ForecastOver{name}Wins"] = _int(
+            (both["forecast"] > both[family]).sum()
+        )
+        numbers[f"ForecastOver{name}Windows"] = _int(len(both))
+    return numbers
+
+
 def _numbers_tex(numbers: dict[str, str]) -> str:
     lines = [
         "% Generated by scripts/paper.py build from the results directory. Do not edit.",
@@ -793,14 +951,18 @@ def build_into(
     )
     reduced = read_campaign(results / manifest["campaigns"]["reduced"]["dir"])
     unreduced = read_campaign(results / manifest["campaigns"]["unreduced"]["dir"])
-    if set(reduced["reduce_level"]) != {"tau"}:
-        raise ResultsError("the reduced campaign holds unreduced units")
+    history = None
+    if "history" in manifest["campaigns"]:
+        history = read_campaign(results / manifest["campaigns"]["history"]["dir"])
+    for campaign in (reduced, history):
+        if campaign is not None and set(campaign["reduce_level"]) != {"tau"}:
+            raise ResultsError("a campaign of Table 2 holds unreduced units")
     out.mkdir(parents=True, exist_ok=True)
 
     rows1, numbers = table1(results, manifest, old1)
     (out / "tab-logs-rows.tex").write_text(rows1)
     (out / "tab-quality-rows-structure.tex").write_text(
-        table2(results, manifest, reduced, old2)
+        table2(results, manifest, reduced, old2, history)
     )
 
     figure = manifest["figure2"]
@@ -819,6 +981,8 @@ def build_into(
     )
     numbers.update(setup_numbers(results, manifest))
     numbers.update(section5_numbers(results, manifest, reduced, unreduced))
+    if history is not None:
+        numbers.update(history_numbers(reduced, history))
     (out / "numbers.tex").write_text(_numbers_tex(numbers))
     return numbers
 
@@ -896,6 +1060,18 @@ def main() -> int:
         type=Path,
         required=True,
         help="directory holding the processed logs the campaigns evaluated",
+    )
+    p.add_argument(
+        "--history-campaign",
+        type=Path,
+        default=None,
+        help="gated campaign of Persistence and Expanding (with --history-root)",
+    )
+    p.add_argument(
+        "--history-root",
+        type=Path,
+        default=None,
+        help="root the history models were built into (with --history-campaign)",
     )
 
     highlight = {
