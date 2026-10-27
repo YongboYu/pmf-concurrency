@@ -7,8 +7,9 @@ from the files on disk, so a model the pipeline failed to write, or a unit the
 evaluation did not record, shows up as missing.
 
     windows_of       the windows of one log, from its timestamps
-    expected_units   the grid of campaign 1 (reduced nets), 2 (unreduced, replay modes)
-                     or 3 (history families, reduced nets)
+    expected_units   the grid of campaign 1 (reduced nets), 2 (unreduced, replay modes),
+                     3 (history families, reduced nets) or 4 (history families,
+                     unreduced nets)
     check_models     every model a unit needs exists, parses and has the grid's dates
     reconcile        recorded units against the grid: missing, duplicated, extra
     near_budget      finished units above 75 % of the time or memory budget
@@ -33,7 +34,8 @@ TABLE2_ARMS: dict[float, tuple[str, ...]] = {
     -1.0: ("forecast", "re_mined"),
 }
 
-#: Families of campaign 3: the history families are mined, so at Fodina's default only.
+#: Families of campaigns 3 and 4: the history families are mined, so at Fodina's
+#: default only.
 HISTORY_ARMS: dict[float, tuple[str, ...]] = {0.0: HISTORY_FAMILIES}
 
 #: Evaluators of Table 2.
@@ -139,7 +141,8 @@ def expected_units(windows: dict[str, pd.DataFrame], campaign: int) -> pd.DataFr
     nets (cohort ``table2``) plus the BPI2017 replay-mode comparison (cohort
     ``replay_modes``) at both levels; its ``case_complete`` rows come from the two
     base grids and are not repeated. Campaign 3 is the Table 2 evaluators on the
-    history families' τ-reduced nets (cohort ``history``).
+    history families' τ-reduced nets (cohort ``history``), and campaign 4 the same
+    units on their unreduced nets.
     """
     table2 = [(e, ER_MODE if e == "er" else TABLE2_MODE) for e in TABLE2_EVALUATORS]
     rows: list[dict] = []
@@ -158,11 +161,12 @@ def expected_units(windows: dict[str, pd.DataFrame], campaign: int) -> pd.DataFr
                 ("tau", "none"),
                 "replay_modes",
             )
-    elif campaign == 3:
+    elif campaign in (3, 4):
+        level = "tau" if campaign == 3 else "none"
         for dataset, w in windows.items():
-            rows += _rows(dataset, w, HISTORY_ARMS, table2, ("tau",), "history")
+            rows += _rows(dataset, w, HISTORY_ARMS, table2, (level,), "history")
     else:
-        raise ValueError(f"campaign must be 1, 2 or 3, not {campaign}")
+        raise ValueError(f"campaign must be 1, 2, 3 or 4, not {campaign}")
     return pd.DataFrame(rows, columns=list(EXPECTED_COLUMNS))
 
 

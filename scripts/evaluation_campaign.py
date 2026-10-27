@@ -23,8 +23,9 @@ Usage, from the project root of the frozen checkout, inside tmux:
         --pipeline-roots outputs_tpat0 outputs_tpatm1 --concurrency 3
     uv run python scripts/evaluation_campaign.py gate --campaign-dir campaigns/c1
 
-Campaign 3 scores the history families, so its only pipeline root is the one
-``pmf_concurrency.history_models`` wrote (``--pipeline-roots outputs_history_tpat0``).
+Campaigns 3 and 4 score the history families on the reduced and the unreduced nets, so
+their only pipeline root is the one ``pmf_concurrency.history_models`` wrote
+(``--pipeline-roots outputs_history_tpat0``).
 
 Outputs in the campaign directory:
     expected_units.csv       the units to record
@@ -710,7 +711,7 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("grid", help="write expected_units.csv")
-    p.add_argument("--campaign", type=int, choices=(1, 2, 3), required=True)
+    p.add_argument("--campaign", type=int, choices=(1, 2, 3, 4), required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument(
         "--datasets",

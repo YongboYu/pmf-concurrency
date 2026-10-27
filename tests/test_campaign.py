@@ -142,6 +142,21 @@ def test_campaign_3_is_the_history_families_at_tpat_0_on_the_reduced_nets(two_lo
     assert not grid.duplicated().any()
 
 
+def test_campaign_4_is_campaign_3_on_the_unreduced_nets(two_logs):
+    grid = expected_units(two_logs, campaign=4)
+    reduced = expected_units(two_logs, campaign=3)
+
+    assert list(grid.columns) == list(EXPECTED_COLUMNS)
+    assert set(grid["reduce_level"]) == {"none"}
+    # The same units, windows, dates and cohort; only the level differs.
+    pd.testing.assert_frame_equal(grid, reduced.assign(reduce_level="none"))
+
+
+def test_an_unknown_campaign_is_refused(two_logs):
+    with pytest.raises(ValueError, match="campaign must be"):
+        expected_units(two_logs, campaign=5)
+
+
 # The model check
 
 

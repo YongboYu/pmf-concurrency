@@ -75,6 +75,30 @@ def test_the_grid_command_writes_campaign_3_once(driver, monkeypatch, tmp_path):
     assert out.read_bytes() == written
 
 
+def test_the_grid_command_writes_campaign_4(driver, monkeypatch, tmp_path):
+    events = pd.DataFrame(
+        {
+            "case:concept:name": ["c1", "c2"],
+            "concept:name": ["A", "B"],
+            "time:timestamp": pd.to_datetime(["2021-01-01", "2021-02-20"]),
+        }
+    )
+    monkeypatch.setattr(
+        driver, "resolve_dataset", lambda key: (f"{key}.xes", tmp_path / key, None)
+    )
+    monkeypatch.setattr(driver, "load_event_log", lambda _path: events)
+    out = tmp_path / "c4" / "expected_units.csv"
+    argv = ["grid", "--campaign", "4", "--out", str(out), "--datasets", "sepsis"]
+    monkeypatch.setattr(sys, "argv", ["evaluation_campaign.py", *argv])
+
+    assert driver.main() == 0
+    grid = read_expected(out)
+    assert len(grid) == 4 * 2 * 3
+    assert set(grid["model_type"]) == {"persistence", "expanding"}
+    assert set(grid["reduce_level"]) == {"none"}
+    assert set(grid["cohort"]) == {"history"}
+
+
 def test_one_batch_per_log_tpat_family_evaluator_mode_and_level(driver, grid):
     batches = driver.plan_batches(grid)
 
