@@ -115,6 +115,17 @@ def test_a_row_the_submitted_table_lacks_is_marked_whole(paper):
     assert paper._text("Persistence", paper.ABSENT) == "\\rev{Persistence}"
 
 
+def test_a_submitted_row_lines_up_around_the_f1_columns_it_lacks(paper):
+    n_submitted = paper.TABLE2_CELLS - len(paper.TABLE2_F1_CELLS)
+    old = [f"$0.{i}$" for i in range(n_submitted)]
+    cells = paper._submitted([old], 0, False)
+    assert len(cells) == paper.TABLE2_CELLS
+    assert [cells[i] for i in paper.TABLE2_F1_CELLS] == [paper.ABSENT] * len(
+        paper.TABLE2_F1_CELLS
+    )
+    assert [c for c in cells if c != paper.ABSENT] == old
+
+
 def _history_units(empty: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Alignment units of every log: two windows, five families at tPAT 0."""
     precision = {
@@ -169,3 +180,39 @@ def test_history_numbers_compare_with_the_families_they_derive_from(paper):
 def test_an_empty_history_net_is_refused(paper):
     with pytest.raises(ResultsError, match="empty"):
         paper.history_numbers(*_history_units(empty="persistence"))
+
+
+def _outcome_units(evaluator: str, statuses: list[tuple[str, str]]) -> pd.DataFrame:
+    """Units of one evaluator from (status, reason) pairs; an empty net fits 0."""
+    rows = []
+    for status, reason in statuses:
+        empty = reason == "empty model"
+        scored = status == "ok" and not empty
+        rows.append(
+            {
+                "evaluator": evaluator,
+                "guard_status": status,
+                "guard_reason": reason,
+                "log_fitness": 0.0 if empty else (0.8 if scored else float("nan")),
+                "precision": 0.6 if scored else float("nan"),
+                "f1": 2 * 0.8 * 0.6 / 1.4 if scored else float("nan"),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def test_zero_filled_f1_counts_only_an_empty_net_as_zero(paper):
+    units = _outcome_units(
+        "alignment", [("ok", ""), ("ok", "empty model"), ("oom", "")]
+    )
+    f1 = paper.with_f1_zero(units)["f1_zero"]
+    assert f1.iloc[0] == pytest.approx(0.96 / 1.4)
+    assert f1.iloc[1] == 0.0
+    assert f1.isna().iloc[2]
+
+
+def test_an_empty_net_that_fits_is_refused(paper):
+    units = _outcome_units("alignment", [("ok", "empty model")])
+    units.loc[0, "log_fitness"] = 0.5
+    with pytest.raises(ResultsError, match="empty net"):
+        paper.with_f1_zero(units)

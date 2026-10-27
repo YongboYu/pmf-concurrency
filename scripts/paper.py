@@ -130,7 +130,11 @@ DAGGER = "$^{\\dagger}$"
 ABSENT = ""
 
 #: Value cells of a Table 2 row, after the model and tPAT cells.
-TABLE2_CELLS = 11
+TABLE2_CELLS = 15
+
+#: Positions of the token and alignment F1 and zero-filled F1 cells, which the
+#: submitted table lacks.
+TABLE2_F1_CELLS = (3, 4, 9, 10)
 
 WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight")
 
@@ -635,7 +639,7 @@ def table2(
                     if run is None:
                         row += 1
                 if family == "re_mined":
-                    lines.append("      \\cmidrule(l){2-14}")
+                    lines.append("      \\cmidrule(l){2-18}")
         lines.append("    \\midrule" if index < len(LOGS) - 1 else "    \\bottomrule")
     return "\n".join(lines) + "\n"
 
@@ -652,10 +656,18 @@ def _name(family: str, i: int, n_settings: int) -> str:
 def _submitted(
     submitted: list[list[str]] | None, row: int, new: bool
 ) -> list[str] | None:
-    """The submitted cells a row is compared with, or None without highlighting."""
+    """The submitted cells a row is compared with, or None without highlighting.
+
+    The submitted table has no F1 columns, so those cells compare as absent.
+    """
     if submitted is None:
         return None
-    return [ABSENT] * TABLE2_CELLS if new else submitted[row]
+    if new:
+        return [ABSENT] * TABLE2_CELLS
+    cells = list(submitted[row])
+    for i in TABLE2_F1_CELLS:
+        cells.insert(i, ABSENT)
+    return cells
 
 
 def _row(
@@ -669,27 +681,50 @@ def _row(
     old: list[str] | None,
 ) -> str:
     """One Table 2 row of a family at one tPAT."""
-    by = {ev: units[units["evaluator"] == ev] for ev in TABLE2_EVALUATORS}
-    tok, aln, er = by["token_etc"], by["alignment"], by["er"]
-    cells = [
-        _cell(_structure(results, run, key, family), 1, 4, 1, 4),
-        _cell(pool(tok, "log_fitness"), 3, 5, 3),
-        _cell(pool(tok, "precision"), 3, 5, 3),
-        _cell(pool(tok, "perc_fit_traces"), 1, 5, 1, 4),
-        _cell(pool(tok, "pct_prefix_mass_fit"), 1, 5, 1, 4),
-        _cell(pool(aln, "log_fitness"), 3, 5, 3),
-        _cell(pool(aln, "precision"), 3, 5, 3),
-        _cell(pool(aln, "perc_fit_traces"), 1, 5, 1, 4),
-        _cell(pool(er, "er"), 3, 6, 2, 5),
-        _cell(pool(er, "fitting_ratio"), 4, 6, 3),
-        _coverage(pool(er, "er")),
-    ]
+    structure = _cell(_structure(results, run, key, family), 1, 4, 1, 4)
+    cells = [structure, *_conformance(units)]
     marks = old or [None] * len(cells)
     cells = [_math(c, o) for c, o in zip(cells, marks, strict=True)]
     tpat_cell = f"${tpat:.1f}$"
     if old == [ABSENT] * TABLE2_CELLS:
         name, tpat_cell = _text(name, ABSENT), _text(tpat_cell, ABSENT)
     return f"      & {name:<24} & {tpat_cell:<12} & " + " & ".join(cells) + " \\\\"
+
+
+def with_f1_zero(units: pd.DataFrame) -> pd.DataFrame:
+    """``units`` with ``f1_zero``: F1, or 0 for an empty net.
+
+    0 is the limit of F1 as fitness goes to 0. A unit without an F1 for another reason
+    stays without one.
+    """
+    empty = units["guard_reason"].eq("empty model")
+    if (pd.to_numeric(units.loc[empty, "log_fitness"]) != 0).any():
+        raise ResultsError("an empty net has a fitness above 0")
+    return units.assign(f1_zero=units["f1"].mask(empty, 0.0))
+
+
+def _conformance(units: pd.DataFrame) -> list[tuple[str, str | None]]:
+    """Table 2's conformance cells of a row: token replay, alignment and ER."""
+    by = {ev: units[units["evaluator"] == ev] for ev in TABLE2_EVALUATORS}
+    tok, aln = (with_f1_zero(by[ev]) for ev in ("token_etc", "alignment"))
+    er = by["er"]
+    pooled = [
+        (pool(tok, "log_fitness"), (3, 5, 3)),
+        (pool(tok, "precision"), (3, 5, 3)),
+        (pool(tok, "f1"), (3, 5, 3)),
+        (pool(tok, "f1_zero"), (3, 5, 3)),
+        (pool(tok, "perc_fit_traces"), (1, 5, 1, 4)),
+        (pool(tok, "pct_prefix_mass_fit"), (1, 5, 1, 4)),
+        (pool(aln, "log_fitness"), (3, 5, 3)),
+        (pool(aln, "precision"), (3, 5, 3)),
+        (pool(aln, "f1"), (3, 5, 3)),
+        (pool(aln, "f1_zero"), (3, 5, 3)),
+        (pool(aln, "perc_fit_traces"), (1, 5, 1, 4)),
+        (pool(er, "er"), (3, 6, 2, 5)),
+        (pool(er, "fitting_ratio"), (4, 6, 3)),
+    ]
+    # ER has a coverage column of its own.
+    return [_cell(p, *fmt) for p, fmt in pooled] + [_coverage(pool(er, "er"))]
 
 
 # build: prose numbers
