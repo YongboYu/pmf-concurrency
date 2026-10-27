@@ -201,6 +201,35 @@ def _outcome_units(evaluator: str, statuses: list[tuple[str, str]]) -> pd.DataFr
     return pd.DataFrame(rows)
 
 
+def test_ok_units_split_into_scored_and_empty_and_the_rest_keep_their_status(paper):
+    units = _outcome_units(
+        "alignment",
+        [("ok", ""), ("ok", "empty model"), ("timeout", ""), ("unavailable", "")],
+    )
+    assert list(paper.outcomes(units)) == ["scored", "empty", "timeout", "unavailable"]
+
+
+def test_outcome_cells_count_each_evaluator_and_print_a_dash_for_none(paper):
+    units = pd.concat(
+        [
+            _outcome_units("token_etc", [("ok", ""), ("ok", "empty model")]),
+            _outcome_units("alignment", [("ok", ""), ("oom", "")]),
+            _outcome_units("er", [("timeout", ""), ("timeout", "")]),
+        ]
+    )
+    assert paper.outcome_cells(units) == [
+        *("1", "1", "--", "--"),
+        *("1", "--", "--", "1", "--"),
+        *("--", "--", "2", "--"),
+    ]
+
+
+def test_an_outcome_the_outcome_table_lacks_is_refused(paper):
+    units = _outcome_units("token_etc", [("crashed", "")])
+    with pytest.raises(ResultsError, match="outcome table lacks"):
+        paper.outcome_cells(units)
+
+
 def test_zero_filled_f1_counts_only_an_empty_net_as_zero(paper):
     units = _outcome_units(
         "alignment", [("ok", ""), ("ok", "empty model"), ("oom", "")]
@@ -216,3 +245,34 @@ def test_an_empty_net_that_fits_is_refused(paper):
     units.loc[0, "log_fitness"] = 0.5
     with pytest.raises(ResultsError, match="empty net"):
         paper.with_f1_zero(units)
+
+
+def test_unreduced_cells_are_table2_columns_marked_new(paper):
+    statuses = [("ok", "")] * 2 + [("ok", "empty model"), ("timeout", "")]
+    units = pd.concat(
+        [_outcome_units(ev, statuses) for ev in ("token_etc", "alignment", "er")]
+    ).assign(perc_fit_traces=50.0, pct_prefix_mass_fit=90.0, er=2.0, fitting_ratio=0.5)
+    cells = paper.conformance_cells(units, new=True)
+    assert len(cells) == paper.TABLE2_CELLS - 1
+    assert cells[0] == "$\\rev{0.533}_{\\pm\\rev{0.462}}$"
+    assert cells[2] == "$\\rev{0.686}_{\\pm\\rev{0.000}}$"
+    assert cells[3] == "$\\rev{0.457}_{\\pm\\rev{0.396}}$"
+    assert cells[-1] == "$\\rev{3/4}$"
+
+
+def test_appendix_rows_span_the_reduction_levels_and_carry_a_net_column(paper):
+    none = pd.DataFrame(
+        columns=["dataset", "tpat", "model_type", "evaluator", "guard_status"]
+    ).assign(guard_reason="")
+    pair = ("forecast", "re_mined")
+    groups = [
+        (pair, {-1.0: pair}, {"none": none, "tau": none}),
+        (("persistence",), {0.0: ("persistence",)}, {"tau": none}),
+    ]
+    body = paper.appendix_rows(groups, paper.outcome_cells)
+    first_log = body.split("\\midrule")[0].splitlines()
+    assert first_log[0] == "    \\multirow{5}{*}{BPI2017}"
+    assert "\\multirow{2}{*}{Forecast}" in first_log[1]
+    assert first_log[2].startswith("      &  &  & reduced & ")
+    assert first_log[5] == "      \\cmidrule(l){2-17}"
+    assert first_log[6].startswith("      & Persistence & $0.0$ & reduced & ")

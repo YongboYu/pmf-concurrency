@@ -28,6 +28,8 @@ Files ``build`` writes:
     numbers.tex                      one macro per number in the prose (\\pmf...)
     tab-logs-rows.tex                Table 1 body rows
     tab-quality-rows-structure.tex   Table 2 body rows
+    tab-outcomes-rows.tex            appendix table of unit outcomes, body rows
+    tab-unreduced-rows.tex           appendix table of the unreduced nets, body rows
     fig-w1-expanded.{dot,pdf}        Figure 2 (a)
     fig-w1-reduced.{dot,pdf}         Figure 2 (b)
 """
@@ -42,6 +44,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -125,6 +128,20 @@ FIGURE_NET = ("bpi2017", -1.0, 1, "forecast")
 MIN_VALUES = 2
 
 DAGGER = "$^{\\dagger}$"
+
+#: Outcomes the outcome table counts per evaluator, in column order. ``scored`` and
+#: ``empty`` split the ``ok`` units on whether the net accepts any trace.
+OUTCOMES = {
+    "token_etc": ("scored", "empty", "timeout", "oom"),
+    "alignment": ("scored", "empty", "timeout", "oom", "unavailable"),
+    "er": ("scored", "empty", "timeout", "oom"),
+}
+
+#: An outcome no unit of a row ended in.
+NONE = "--"
+
+#: Net column of the outcome table, by reduction level, in row order.
+LEVELS = {"none": "unreduced", "tau": "reduced"}
 
 #: The submitted cell of a row the submitted table lacks: every value differs from it.
 ABSENT = ""
@@ -727,6 +744,99 @@ def _conformance(units: pd.DataFrame) -> list[tuple[str, str | None]]:
     return [_cell(p, *fmt) for p, fmt in pooled] + [_coverage(pool(er, "er"))]
 
 
+# build: appendix tables
+
+
+def outcomes(units: pd.DataFrame) -> pd.Series:
+    """Each unit's outcome: its status, with ``ok`` split into scored and empty."""
+    status = units["guard_status"].astype(str)
+    ok = status == "ok"
+    empty = units["guard_reason"].eq("empty model")
+    return status.mask(ok & empty, "empty").mask(ok & ~empty, "scored")
+
+
+def _new(value: str, new: bool) -> str:
+    return _text(value, ABSENT if new else None)
+
+
+def _spanning(text: str, rows: int, new: bool) -> str:
+    text = _new(text, new)
+    return text if rows == 1 else f"\\multirow{{{rows}}}{{*}}{{{text}}}"
+
+
+def outcome_cells(units: pd.DataFrame, new: bool = False) -> list[str]:
+    """Outcome table cells of one row: units per outcome, for every evaluator."""
+    cells = []
+    for evaluator in TABLE2_EVALUATORS:
+        columns = OUTCOMES[evaluator]
+        counts = outcomes(units[units["evaluator"] == evaluator]).value_counts()
+        other = sorted(set(counts.index) - set(columns))
+        if other:
+            raise ResultsError(
+                f"{evaluator} units ended {other}, which the outcome table lacks"
+            )
+        cells += [_new(_int(counts[c]) if c in counts else NONE, new) for c in columns]
+    return cells
+
+
+def conformance_cells(units: pd.DataFrame, new: bool = False) -> list[str]:
+    """Appendix cells of one row: Table 2's columns without the binding structure."""
+    old = ABSENT if new else None
+    return [_math(c, old) for c in _conformance(units)]
+
+
+def appendix_rows(
+    groups: list[tuple[tuple[str, ...], dict, dict[str, pd.DataFrame]]],
+    cells: Callable[[pd.DataFrame, bool], list[str]],
+    new: bool = False,
+) -> str:
+    """Body rows in Table 2's order, one per family, tPAT and reduction level.
+
+    ``groups`` holds (families, arms, campaign per reduction level); ``cells`` gives
+    the value cells of a row's units. With several levels the rows carry a Net column.
+    With ``new``, every cell is marked: the submitted manuscript has no such table.
+    """
+    net_column = any(len(levels) > 1 for _, _, levels in groups)
+    n_rows = sum(len(levels) * len(arms[t]) for _, arms, levels in groups for t in arms)
+    lines = []
+    for index, (key, label) in enumerate(LOGS):
+        lines.append(f"    \\multirow{{{n_rows}}}{{*}}{{{_new(label, new)}}}")
+        for families, arms, levels in groups:
+            for family in families:
+                settings = [t for t in (-1.0, 0.0) if family in arms.get(t, ())]
+                for i, tpat in enumerate(settings):
+                    for j, (level, campaign) in enumerate(levels.items()):
+                        units = campaign[
+                            (campaign["dataset"] == key)
+                            & (campaign["tpat"] == tpat)
+                            & (campaign["model_type"] == family)
+                        ]
+                        first = j == 0
+                        name = FAMILY_LABELS[family]
+                        name = (
+                            _spanning(name, len(settings) * len(levels), new)
+                            if first and i == 0
+                            else ""
+                        )
+                        tpat_cell = (
+                            _spanning(f"${tpat:.1f}$", len(levels), new)
+                            if first
+                            else ""
+                        )
+                        values = cells(units, new)
+                        labels = [name, tpat_cell]
+                        if net_column:
+                            labels.append(_new(LEVELS[level], new))
+                        lines.append(
+                            "      & " + " & ".join([*labels, *values]) + " \\\\"
+                        )
+                if family == "re_mined":
+                    last = 3 + net_column + len(values)
+                    lines.append(f"      \\cmidrule(l){{2-{last}}}")
+        lines.append("    \\midrule" if index < len(LOGS) - 1 else "    \\bottomrule")
+    return "\n".join(lines) + "\n"
+
+
 # build: prose numbers
 
 
@@ -797,6 +907,24 @@ def _empty_models(reduced: pd.DataFrame) -> dict[str, str]:
                 pool(units, "log_fitness").mean, 2
             )
     return numbers
+
+
+def _token_fitness_by_level(
+    grid: pd.DataFrame, reduced: pd.DataFrame
+) -> dict[str, str]:
+    """Windows whose token-replay fitness is higher on the unreduced net."""
+    key = ["dataset", "tpat", "model_type", "window"]
+    fitness = [
+        level.loc[
+            (level["evaluator"] == "token_etc") & (level["guard_status"] == "ok")
+        ].set_index(key)["log_fitness"]
+        for level in (grid, reduced)
+    ]
+    both = pd.concat(fitness, axis=1, keys=("none", "tau")).dropna()
+    return {
+        "UnreducedTokenFitHigher": _int((both["none"] > both["tau"]).sum()),
+        "TokenFitBothLevels": _int(len(both)),
+    }
 
 
 def _er_coverage(reduced: pd.DataFrame) -> dict[str, str]:
@@ -899,6 +1027,7 @@ def section5_numbers(
     numbers["UnfinishableNets"] = _int(audit["unfinishable"].sum())
 
     numbers.update(_empty_models(reduced))
+    numbers.update(_token_fitness_by_level(grid, reduced))
     numbers.update(_er_coverage(reduced))
 
     choice = {"topology": {}, "frequencies": 0, "nets": 0}
@@ -999,6 +1128,24 @@ def build_into(
     (out / "tab-quality-rows-structure.tex").write_text(
         table2(results, manifest, reduced, old2, history)
     )
+    new = highlight_against is not None
+    table2_unreduced = unreduced[unreduced["cohort"] == "table2"]
+    both_levels = [
+        (MODEL_FAMILIES, TABLE2_ARMS, {"none": table2_unreduced, "tau": reduced})
+    ]
+    if history is not None:
+        both_levels.append((HISTORY_FAMILIES, HISTORY_ARMS, {"tau": history}))
+    (out / "tab-outcomes-rows.tex").write_text(
+        appendix_rows(both_levels, outcome_cells, new)
+    )
+    # The history families have no unreduced nets.
+    (out / "tab-unreduced-rows.tex").write_text(
+        appendix_rows(
+            [(MODEL_FAMILIES, TABLE2_ARMS, {"none": table2_unreduced})],
+            conformance_cells,
+            new,
+        )
+    )
 
     figure = manifest["figure2"]
     counts = draw(json.loads((results / figure["file"]).read_text()), out, "fig-w1")
@@ -1026,6 +1173,8 @@ GENERATED_TEXT = (
     "numbers.tex",
     "tab-logs-rows.tex",
     "tab-quality-rows-structure.tex",
+    "tab-outcomes-rows.tex",
+    "tab-unreduced-rows.tex",
     "fig-w1-expanded.dot",
     "fig-w1-reduced.dot",
 )
@@ -1064,7 +1213,13 @@ def check(args: argparse.Namespace) -> int:
             else:
                 print(f"ok      {name}")
     main_tex = (args.manuscript / "main.tex").read_text()
-    for needed in ("\\input{numbers}", "tab-logs-rows", "tab-quality-rows-structure"):
+    for needed in (
+        "\\input{numbers}",
+        "tab-logs-rows",
+        "tab-quality-rows-structure",
+        "tab-outcomes-rows",
+        "tab-unreduced-rows",
+    ):
         if needed not in main_tex:
             print(f"main.tex does not use {needed}")
             failed = True
