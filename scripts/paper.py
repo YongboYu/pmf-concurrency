@@ -8,14 +8,16 @@
 ``collect`` refuses a campaign whose gate did not pass, a campaign that evaluated
 other nets than the pipeline runs it is given, and a log other than the one the
 campaigns evaluated. The history campaign and root, given together, add Persistence
-and Expanding to Table 2. ``build`` reads only the results directory and refuses it
-unless every file matches its hash in ``MANIFEST.yaml``.
+and Expanding to Table 2; their campaign on the unreduced nets adds them to the
+appendix tables at that level. ``build`` reads only the results directory and refuses
+it unless every file matches its hash in ``MANIFEST.yaml``.
 
 Usage, from the project root:
     uv run python scripts/paper.py collect --out results \\
         --reduced-campaign campaigns/c1 --unreduced-campaign campaigns/c2 \\
         --pipeline-roots outputs_tpat0 outputs_tpatm1 --data-dir data \\
-        --history-campaign campaigns/c3 --history-root outputs_history_tpat0
+        --history-campaign campaigns/c3 --history-root outputs_history_tpat0 \\
+        --history-unreduced-campaign campaigns/c4
     uv run python scripts/paper.py build --results results --out manuscript/paper \\
         --highlight-against manuscript/submitted
     uv run python scripts/paper.py check --results results --manuscript manuscript/paper \\
@@ -298,9 +300,15 @@ def collect(args: argparse.Namespace) -> int:
         raise SystemExit(f"{out} exists and is not empty: collect into a new directory")
     if (args.history_campaign is None) != (args.history_root is None):
         raise SystemExit("give --history-campaign and --history-root together")
+    if args.history_unreduced_campaign is not None and args.history_campaign is None:
+        raise SystemExit(
+            "give --history-unreduced-campaign with --history-campaign and --history-root"
+        )
     campaigns = {"reduced": args.reduced_campaign, "unreduced": args.unreduced_campaign}
     if args.history_campaign is not None:
         campaigns["history"] = args.history_campaign
+    if args.history_unreduced_campaign is not None:
+        campaigns["history_unreduced"] = args.history_unreduced_campaign
     for d in campaigns.values():
         read_campaign(d)  # the gate passed and the units equal the grid
     runs = _pipeline_runs(args.pipeline_roots)
@@ -312,7 +320,7 @@ def collect(args: argparse.Namespace) -> int:
     for role, d in campaigns.items():
         _check_models(
             json.loads((d / "campaign_manifest.json").read_text()),
-            history_runs if role == "history" else runs,
+            history_runs if role.startswith("history") else runs,
             d,
         )
 
@@ -1027,7 +1035,6 @@ def section5_numbers(
     numbers["UnfinishableNets"] = _int(audit["unfinishable"].sum())
 
     numbers.update(_empty_models(reduced))
-    numbers.update(_token_fitness_by_level(grid, reduced))
     numbers.update(_er_coverage(reduced))
 
     choice = {"topology": {}, "frequencies": 0, "nets": 0}
@@ -1115,9 +1122,18 @@ def build_into(
     )
     reduced = read_campaign(results / manifest["campaigns"]["reduced"]["dir"])
     unreduced = read_campaign(results / manifest["campaigns"]["unreduced"]["dir"])
-    history = None
+    history = history_unreduced = None
     if "history" in manifest["campaigns"]:
         history = read_campaign(results / manifest["campaigns"]["history"]["dir"])
+    if "history_unreduced" in manifest["campaigns"]:
+        history_unreduced = read_campaign(
+            results / manifest["campaigns"]["history_unreduced"]["dir"]
+        )
+        if history is None or set(history_unreduced["reduce_level"]) != {"none"}:
+            raise ResultsError(
+                "the history families' unreduced campaign needs their reduced one "
+                "and must hold unreduced units only"
+            )
     for campaign in (reduced, history):
         if campaign is not None and set(campaign["reduce_level"]) != {"tau"}:
             raise ResultsError("a campaign of Table 2 holds unreduced units")
@@ -1133,18 +1149,26 @@ def build_into(
     both_levels = [
         (MODEL_FAMILIES, TABLE2_ARMS, {"none": table2_unreduced, "tau": reduced})
     ]
+    unreduced_only = [(MODEL_FAMILIES, TABLE2_ARMS, {"none": table2_unreduced})]
+    # Units of the appendix's unreduced table, and the same units reduced.
+    by_level = [table2_unreduced, reduced]
     if history is not None:
-        both_levels.append((HISTORY_FAMILIES, HISTORY_ARMS, {"tau": history}))
+        levels = {"tau": history}
+        if history_unreduced is not None:
+            levels = {"none": history_unreduced, **levels}
+            unreduced_only.append(
+                (HISTORY_FAMILIES, HISTORY_ARMS, {"none": history_unreduced})
+            )
+            by_level = [
+                pd.concat([table2_unreduced, history_unreduced]),
+                pd.concat([reduced, history]),
+            ]
+        both_levels.append((HISTORY_FAMILIES, HISTORY_ARMS, levels))
     (out / "tab-outcomes-rows.tex").write_text(
         appendix_rows(both_levels, outcome_cells, new)
     )
-    # The history families have no unreduced nets.
     (out / "tab-unreduced-rows.tex").write_text(
-        appendix_rows(
-            [(MODEL_FAMILIES, TABLE2_ARMS, {"none": table2_unreduced})],
-            conformance_cells,
-            new,
-        )
+        appendix_rows(unreduced_only, conformance_cells, new)
     )
 
     figure = manifest["figure2"]
@@ -1163,6 +1187,7 @@ def build_into(
     )
     numbers.update(setup_numbers(results, manifest))
     numbers.update(section5_numbers(results, manifest, reduced, unreduced))
+    numbers.update(_token_fitness_by_level(*by_level))
     if history is not None:
         numbers.update(history_numbers(reduced, history))
     (out / "numbers.tex").write_text(_numbers_tex(numbers))
@@ -1262,6 +1287,12 @@ def main() -> int:
         type=Path,
         default=None,
         help="root the history models were built into (with --history-campaign)",
+    )
+    p.add_argument(
+        "--history-unreduced-campaign",
+        type=Path,
+        default=None,
+        help="gated campaign of Persistence and Expanding on the unreduced nets",
     )
 
     highlight = {
