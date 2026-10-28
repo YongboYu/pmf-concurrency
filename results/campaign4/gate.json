@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "n_expected": 2022,
+  "n_recorded": 2022,
+  "units": {
+    "missing": 0,
+    "duplicated": 0,
+    "extra": 0
+  },
+  "status_counts": {
+    "ok": 1912,
+    "timeout": 88,
+    "oom": 22
+  },
+  "manifest_problems": [],
+  "oom": {
+    "global_rise": 44,
+    "unit_kills": 44,
+    "unattributed": 0,
+    "host_oom_units": 0
+  },
+  "near_budget": {
+    "n_finished": 1912,
+    "n_over_75pct_time": 0,
+    "n_over_75pct_memory": 0,
+    "n_near_budget": 0
+  }
+}

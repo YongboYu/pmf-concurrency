@@ -1,6 +1,6 @@
 note: 'Written by scripts/paper.py collect. Do not edit: collect again.'
-created_utc: '2026-10-26T10:50:22Z'
-collected_by_commit: cd3debc2e429634e6fc4b25761c7392bd1ea05d4
+created_utc: '2026-10-28T11:17:56Z'
+collected_by_commit: d04f0d1caada896e9a97bd8663716097c0843509
 campaigns:
   reduced:
     dir: campaign1
@@ -64,6 +64,26 @@ campaigns:
       ok: 1914
       timeout: 55
       oom: 53
+  history_unreduced:
+    dir: campaign4
+    git_commit: d3999aefa1c7906c04428d1135e5064ea222c4b8
+    host: HP-Z4-G4-LNX
+    cpu: Intel(R) Xeon(R) W-2245 CPU @ 3.90GHz
+    ram_gb: 46.8
+    os: Linux-6.8.0-124-generic-x86_64-with-glibc2.35
+    python: 3.12.12
+    pm4py: 2.7.19.8
+    concurrency: 2
+    mem_gb: 12.0
+    time_min: 20.0
+    omp_num_threads: '8'
+    mkl_num_threads: '8'
+    gate_passed: true
+    n_units: 2022
+    status_counts:
+      ok: 1912
+      timeout: 88
+      oom: 22
 pipeline:
   '-1.0':
     dir: pipeline/outputs_tpatm1
@@ -147,6 +167,15 @@ files:
   campaign3/expected_units.csv: 98567375d230b8d2fd98b1ab4673c82216a27c55a86b1d0fff183b80fbebcedb
   campaign3/gate.json: c7cef100a012c22e8e8ea15292baeb0757e81f5f5ed20facd01eb033153a041e
   campaign3/near_budget.csv: 00576bd822dfffdbecada0ba8e1230016af128ade7a83a983c3d6c1eb55233ca
+  campaign4/batches.csv: ef12e36785b8f332222a8c3a8772c498b4c69998bb9254db70bcb0d47e91da0b
+  campaign4/campaign_manifest.json: c913c37167dd796e068cf9fd86a2e0b8acdfae66fd5cb70e9d97c3230ddb60b1
+  campaign4/environment.json: 6d3ae7124dcf9ae13a3a8dca7080516f52467e2339bb97ec39e3ef7083b391ae
+  campaign4/evaluation.csv: 811d4be0ca768851885089036852fff5a2d006244116e019e358ed056ff5385e
+  campaign4/evaluation_failures.csv: b25c721ed8a697d8f9ae6c538fdc1d1cb5a33a82bc48eb88783676603e8b23fd
+  campaign4/evaluation_summary.csv: 159ed96316ab42cefef188b115e5c920719ad53c8a108a3a5aede3ac036385b8
+  campaign4/expected_units.csv: a7eae7c75c97700be572e2af8044191c40ffeb2bf178e1ba1a7264ab69c05997
+  campaign4/gate.json: 030d881ccf7051209fb3a87c7cf1a537c19053bffa0f49c1897b121c6710ee59
+  campaign4/near_budget.csv: 151b074485e466558b307ac77b4bf3ad5810e045e7089c61b02d0ccfead6ed77
   figure2/window_1_forecast.json: 54b7e3bf26bf5efe80c12d2702034091566a608bbf10e9dfcf60fa46a85c0ae3
   history/outputs_history_tpat0/BPI2017_pmf/experiment_summary.json: 0f46a6afe89508dcf924c470b42d7ff0dbe506834d3e1b59646bac7a1b63872e
   history/outputs_history_tpat0/BPI2017_pmf/structural_metrics.csv: e0a90faaf930b63c0613c151851a0dd025c84dce5207148e0fb08a6454038478

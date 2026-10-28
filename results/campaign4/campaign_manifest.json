@@ -1,0 +1,36 @@
+{
+  "expected_sha256": "deade9984f41c23ed3a49f471417a94c177bad3ee37152b23453be1884a6d273",
+  "models": {
+    "bpi2017 tPAT 0.0": {
+      "weekly_dir": "/home/yongbo/pmf-history/outputs_history_tpat0/BPI2017_pmf/weekly_models",
+      "models_sha256": "2990d0c60541437a76481826ff6b650d273be5f5409b41bf8b08f5021f2f7619"
+    },
+    "bpi2019 tPAT 0.0": {
+      "weekly_dir": "/home/yongbo/pmf-history/outputs_history_tpat0/BPI2019_pmf/weekly_models",
+      "models_sha256": "666f5ceee53be19e3c1c9fa5d6ccbec90bdc144fd77bc5b5b29b52d53b17bcb0"
+    },
+    "hospital_billing tPAT 0.0": {
+      "weekly_dir": "/home/yongbo/pmf-history/outputs_history_tpat0/Hospital_Billing_pmf/weekly_models",
+      "models_sha256": "1c42ce6e0ca8dd3bc62432eb6518386c782fca948c1fda532086b88f104e3171"
+    },
+    "sepsis tPAT 0.0": {
+      "weekly_dir": "/home/yongbo/pmf-history/outputs_history_tpat0/Sepsis_pmf/weekly_models",
+      "models_sha256": "ca1facb22e1e060ccd8b2da5d552c626e6e12237ecf218bc52f73cd9818390a9"
+    }
+  },
+  "git_commit": "d3999aefa1c7906c04428d1135e5064ea222c4b8",
+  "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "uv_lock_sha256": "a7cd8f92e43db65cf74f6f45d09965688598d5a72cb8045ab06046e53c1507de",
+  "python": "3.12.12",
+  "pm4py": "2.7.19.8",
+  "host": "HP-Z4-G4-LNX",
+  "cpu": "Intel(R) Xeon(R) W-2245 CPU @ 3.90GHz",
+  "ram_gb": 46.8,
+  "os": "Linux-6.8.0-124-generic-x86_64-with-glibc2.35",
+  "concurrency": 2,
+  "mem_gb": 12.0,
+  "time_min": 20.0,
+  "omp_num_threads": "8",
+  "mkl_num_threads": "8",
+  "pmf_guard": "1"
+}
