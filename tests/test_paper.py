@@ -149,8 +149,9 @@ def _history_units(empty: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame
                     p, f1, reason = float("nan"), float("nan"), "empty model"
                 if family == empty and key == "sepsis":
                     reason = "empty model"
-                rows.append((key, 0.0, window, family, p, f1, reason))
-            rows.append((key, -1.0, window, "forecast", 0.1, 0.1, ""))
+                fitness = 0.0 if reason else 0.9
+                rows.append((key, 0.0, window, family, fitness, p, f1, reason))
+            rows.append((key, -1.0, window, "forecast", 0.9, 0.1, 0.1, ""))
     units = pd.DataFrame(
         rows,
         columns=[
@@ -158,6 +159,7 @@ def _history_units(empty: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame
             "tpat",
             "window",
             "model_type",
+            "log_fitness",
             "precision",
             "f1",
             "guard_reason",
@@ -171,10 +173,11 @@ def test_history_numbers_compare_with_the_families_they_derive_from(paper):
     numbers = paper.history_numbers(*_history_units())
     assert numbers["ExpandingStaticPrecisionMaxDiff"] == "0.020"
     assert numbers["PersistenceLessPreciseLogs"] == "three"
+    # The empty Forecast net of Sepsis window 2 counts as F1 0 and loses both.
     assert numbers["ForecastOverPersistenceWins"] == "6"
-    assert numbers["ForecastOverPersistenceWindows"] == "7"
+    assert numbers["ForecastOverPersistenceWindows"] == "8"
     assert numbers["ForecastOverExpandingWins"] == "7"
-    assert numbers["ForecastOverExpandingWindows"] == "7"
+    assert numbers["ForecastOverExpandingWindows"] == "8"
 
 
 def test_an_empty_history_net_is_refused(paper):
@@ -230,11 +233,11 @@ def test_an_outcome_the_outcome_table_lacks_is_refused(paper):
         paper.outcome_cells(units)
 
 
-def test_zero_filled_f1_counts_only_an_empty_net_as_zero(paper):
+def test_f1_counts_only_an_empty_net_as_zero(paper):
     units = _outcome_units(
         "alignment", [("ok", ""), ("ok", "empty model"), ("oom", "")]
     )
-    f1 = paper.with_f1_zero(units)["f1_zero"]
+    f1 = paper.with_empty_f1_zero(units)["f1"]
     assert f1.iloc[0] == pytest.approx(0.96 / 1.4)
     assert f1.iloc[1] == 0.0
     assert f1.isna().iloc[2]
@@ -244,7 +247,36 @@ def test_an_empty_net_that_fits_is_refused(paper):
     units = _outcome_units("alignment", [("ok", "empty model")])
     units.loc[0, "log_fitness"] = 0.5
     with pytest.raises(ResultsError, match="empty net"):
-        paper.with_f1_zero(units)
+        paper.with_empty_f1_zero(units)
+
+
+def _refused_units(windows: list[int], family: str = "re_mined") -> pd.DataFrame:
+    """Sepsis alignment units at both tPAT, refused in ``windows``."""
+    return pd.DataFrame(
+        [
+            {
+                "dataset": "sepsis",
+                "tpat": tpat,
+                "window": window,
+                "model_type": family,
+                "failure_category": "not_easy_sound" if window in windows else "",
+            }
+            for tpat in (0.0, -1.0)
+            for window in range(50, 60)
+        ]
+    )
+
+
+def test_refused_nets_are_one_run_of_sepsis_re_mined_windows(paper):
+    units = _refused_units([55, 56, 57, 58])
+    assert paper._refused_nets(units, units) == {
+        "RefusedFirst": "55",
+        "RefusedLast": "58",
+    }
+    with pytest.raises(ResultsError, match="differ or have gaps"):
+        paper._refused_nets(units, _refused_units([55, 56, 58]))
+    with pytest.raises(ResultsError, match="outside Sepsis Re-mined"):
+        paper._refused_nets(_refused_units([55], "forecast"), units)
 
 
 def test_unreduced_cells_are_table2_columns_marked_new(paper):
@@ -254,9 +286,10 @@ def test_unreduced_cells_are_table2_columns_marked_new(paper):
     ).assign(perc_fit_traces=50.0, pct_prefix_mass_fit=90.0, er=2.0, fitting_ratio=0.5)
     cells = paper.conformance_cells(units, new=True)
     assert len(cells) == paper.TABLE2_CELLS - 1
+    # Fitness and F1 count the empty net as 0; precision leaves it out.
     assert cells[0] == "$\\rev{0.533}_{\\pm\\rev{0.462}}$"
-    assert cells[2] == "$\\rev{0.686}_{\\pm\\rev{0.000}}$"
-    assert cells[3] == "$\\rev{0.457}_{\\pm\\rev{0.396}}$"
+    assert cells[1] == "$\\rev{0.600}_{\\pm\\rev{0.000}}$"
+    assert cells[2] == "$\\rev{0.457}_{\\pm\\rev{0.396}}$"
     assert cells[-1] == "$\\rev{3/4}$"
 
 

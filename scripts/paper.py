@@ -149,11 +149,10 @@ LEVELS = {"none": "unreduced", "tau": "reduced"}
 ABSENT = ""
 
 #: Value cells of a Table 2 row, after the model and tPAT cells.
-TABLE2_CELLS = 15
+TABLE2_CELLS = 13
 
-#: Positions of the token and alignment F1 and zero-filled F1 cells, which the
-#: submitted table lacks.
-TABLE2_F1_CELLS = (3, 4, 9, 10)
+#: Positions of the token and alignment F1 cells, which the submitted table lacks.
+TABLE2_F1_CELLS = (3, 8)
 
 WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight")
 
@@ -664,7 +663,7 @@ def table2(
                     if run is None:
                         row += 1
                 if family == "re_mined":
-                    lines.append("      \\cmidrule(l){2-18}")
+                    lines.append(f"      \\cmidrule(l){{2-{3 + TABLE2_CELLS}}}")
         lines.append("    \\midrule" if index < len(LOGS) - 1 else "    \\bottomrule")
     return "\n".join(lines) + "\n"
 
@@ -716,34 +715,32 @@ def _row(
     return f"      & {name:<24} & {tpat_cell:<12} & " + " & ".join(cells) + " \\\\"
 
 
-def with_f1_zero(units: pd.DataFrame) -> pd.DataFrame:
-    """``units`` with ``f1_zero``: F1, or 0 for an empty net.
+def with_empty_f1_zero(units: pd.DataFrame) -> pd.DataFrame:
+    """``units`` with an empty net's F1 set to 0, the limit of F1 as fitness goes to 0.
 
-    0 is the limit of F1 as fitness goes to 0. A unit without an F1 for another reason
-    stays without one.
+    Its precision stays undefined. A unit without an F1 for another reason stays
+    without one.
     """
     empty = units["guard_reason"].eq("empty model")
     if (pd.to_numeric(units.loc[empty, "log_fitness"]) != 0).any():
         raise ResultsError("an empty net has a fitness above 0")
-    return units.assign(f1_zero=units["f1"].mask(empty, 0.0))
+    return units.assign(f1=units["f1"].mask(empty, 0.0))
 
 
 def _conformance(units: pd.DataFrame) -> list[tuple[str, str | None]]:
     """Table 2's conformance cells of a row: token replay, alignment and ER."""
     by = {ev: units[units["evaluator"] == ev] for ev in TABLE2_EVALUATORS}
-    tok, aln = (with_f1_zero(by[ev]) for ev in ("token_etc", "alignment"))
+    tok, aln = (with_empty_f1_zero(by[ev]) for ev in ("token_etc", "alignment"))
     er = by["er"]
     pooled = [
         (pool(tok, "log_fitness"), (3, 5, 3)),
         (pool(tok, "precision"), (3, 5, 3)),
         (pool(tok, "f1"), (3, 5, 3)),
-        (pool(tok, "f1_zero"), (3, 5, 3)),
         (pool(tok, "perc_fit_traces"), (1, 5, 1, 4)),
         (pool(tok, "pct_prefix_mass_fit"), (1, 5, 1, 4)),
         (pool(aln, "log_fitness"), (3, 5, 3)),
         (pool(aln, "precision"), (3, 5, 3)),
         (pool(aln, "f1"), (3, 5, 3)),
-        (pool(aln, "f1_zero"), (3, 5, 3)),
         (pool(aln, "perc_fit_traces"), (1, 5, 1, 4)),
         (pool(er, "er"), (3, 6, 2, 5)),
         (pool(er, "fitting_ratio"), (4, 6, 3)),
@@ -917,6 +914,28 @@ def _empty_models(reduced: pd.DataFrame) -> dict[str, str]:
     return numbers
 
 
+def _refused_nets(reduced: pd.DataFrame, unreduced: pd.DataFrame) -> dict[str, str]:
+    """The Sepsis Re-mined nets PM4Py refuses to align, the same at both levels and tPAT."""
+    windows = []
+    for units in (reduced, unreduced):
+        refused = units[units["failure_category"] == "not_easy_sound"]
+        if set(refused["dataset"]) - {"sepsis"} or set(refused["model_type"]) - {
+            "re_mined"
+        }:
+            raise ResultsError("a refused net outside Sepsis Re-mined: revise the text")
+        windows += [
+            sorted(refused.loc[refused["tpat"] == t, "window"]) for t in (0.0, -1.0)
+        ]
+    first = windows[0]
+    if (
+        not first
+        or any(w != first for w in windows)
+        or first != list(range(first[0], first[-1] + 1))
+    ):
+        raise ResultsError("the refused Sepsis windows differ or have gaps")
+    return {"RefusedFirst": str(first[0]), "RefusedLast": str(first[-1])}
+
+
 def _token_fitness_by_level(
     grid: pd.DataFrame, reduced: pd.DataFrame
 ) -> dict[str, str]:
@@ -1035,6 +1054,7 @@ def section5_numbers(
     numbers["UnfinishableNets"] = _int(audit["unfinishable"].sum())
 
     numbers.update(_empty_models(reduced))
+    numbers.update(_refused_nets(reduced, grid))
     numbers.update(_er_coverage(reduced))
 
     choice = {"topology": {}, "frequencies": 0, "nets": 0}
@@ -1065,7 +1085,8 @@ def history_numbers(reduced: pd.DataFrame, history: pd.DataFrame) -> dict[str, s
     """Persistence and Expanding against the families they derive from and Forecast.
 
     Precision is Align-ETC precision pooled per log. The F1 counts are over the
-    windows where Forecast and the history family both have an alignment F1 at tPAT 0.
+    windows where Forecast and the history family both have an alignment F1 at tPAT 0,
+    an empty net's being 0.
     """
     if (history["guard_reason"] == "empty model").any():
         raise ResultsError("a history net is empty: revise the text")
@@ -1083,7 +1104,7 @@ def history_numbers(reduced: pd.DataFrame, history: pd.DataFrame) -> dict[str, s
         "ExpandingStaticPrecisionMaxDiff": _fixed(gap, 3),
         "PersistenceLessPreciseLogs": WORDS[less],
     }
-    ok = aln[aln["guard_status"] == "ok"]
+    ok = with_empty_f1_zero(aln[aln["guard_status"] == "ok"])
     f1 = ok.pivot_table(index=["dataset", "window"], columns="model_type", values="f1")
     for family in HISTORY_FAMILIES:
         both = f1[["forecast", family]].dropna()
