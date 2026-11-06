@@ -154,6 +154,16 @@ TABLE2_CELLS = 13
 #: Positions of the token and alignment F1 cells, which the submitted table lacks.
 TABLE2_F1_CELLS = (3, 8)
 
+#: Model families in the row order of Table 2 and the appendix tables.
+ROW_ORDER = (
+    "forecast",
+    "re_mined",
+    "direct_mined",
+    "persistence",
+    "static",
+    "expanding",
+)
+
 WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight")
 
 
@@ -608,6 +618,15 @@ def table1(
 # build: Table 2
 
 
+def _in_row_order(groups: list[tuple]) -> list[tuple[str, tuple]]:
+    """Each family of ``groups`` with the group it comes from, in ``ROW_ORDER``."""
+    pairs = [(family, group) for group in groups for family in group[0]]
+    unknown = sorted({family for family, _ in pairs} - set(ROW_ORDER))
+    if unknown:
+        raise ResultsError(f"no table row order for the families {unknown}")
+    return sorted(pairs, key=lambda pair: ROW_ORDER.index(pair[0]))
+
+
 def _structure(results: Path, run: dict, key: str, family: str):
     path = results / run["dir"] / _dataset(key)[0] / "structural_metrics.csv"
     frame = pd.read_csv(path)
@@ -627,8 +646,9 @@ def table2(
 ) -> str:
     """Body rows: τ-reduced nets, case-complete replay, ER on window fragments.
 
-    With ``history``, the history campaign's units, Persistence and Expanding follow
-    Static. The submitted table lacks their rows, so all of each is marked.
+    With ``history``, the history campaign's units, Persistence follows Direct-mined
+    and Expanding follows Static. The submitted table lacks their rows, so all of
+    each is marked.
     """
     groups: list[
         tuple[tuple[str, ...], dict[float, tuple[str, ...]], pd.DataFrame, dict | None]
@@ -639,31 +659,31 @@ def table2(
     lines, row = [], 0
     for index, (key, label) in enumerate(LOGS):
         lines.append(f"    \\multirow{{{n_rows}}}{{*}}{{{label}}}")
-        for families, arms, campaign, run in groups:
-            for family in families:
-                settings = [t for t in (-1.0, 0.0) if family in arms.get(t, ())]
-                for i, tpat in enumerate(settings):
-                    units = campaign[
-                        (campaign["dataset"] == key)
-                        & (campaign["tpat"] == tpat)
-                        & (campaign["model_type"] == family)
-                    ]
-                    lines.append(
-                        _row(
-                            results,
-                            run or manifest["pipeline"][_tag(tpat)],
-                            key,
-                            family,
-                            tpat,
-                            units,
-                            _name(family, i, len(settings)),
-                            _submitted(submitted, row, run is not None),
-                        )
+        for family, (_, arms, campaign, run) in _in_row_order(groups):
+            settings = [t for t in (-1.0, 0.0) if family in arms.get(t, ())]
+            for i, tpat in enumerate(settings):
+                units = campaign[
+                    (campaign["dataset"] == key)
+                    & (campaign["tpat"] == tpat)
+                    & (campaign["model_type"] == family)
+                ]
+                lines.append(
+                    _row(
+                        results,
+                        run or manifest["pipeline"][_tag(tpat)],
+                        key,
+                        family,
+                        tpat,
+                        units,
+                        _name(family, i, len(settings)),
+                        _submitted(submitted, row, run is not None),
                     )
-                    if run is None:
-                        row += 1
-                if family == "re_mined":
-                    lines.append(f"      \\cmidrule(l){{2-{3 + TABLE2_CELLS}}}")
+                )
+                # The submitted table holds the main families' rows only, in order.
+                if run is None:
+                    row += 1
+            if family == "re_mined":
+                lines.append(f"      \\cmidrule(l){{2-{3 + TABLE2_CELLS}}}")
         lines.append("    \\midrule" if index < len(LOGS) - 1 else "    \\bottomrule")
     return "\n".join(lines) + "\n"
 
@@ -795,7 +815,7 @@ def appendix_rows(
     cells: Callable[[pd.DataFrame, bool], list[str]],
     new: bool = False,
 ) -> str:
-    """Body rows in Table 2's order, one per family, tPAT and reduction level.
+    """Body rows in ``ROW_ORDER``, one per family, tPAT and reduction level.
 
     ``groups`` holds (families, arms, campaign per reduction level); ``cells`` gives
     the value cells of a row's units. With several levels the rows carry a Net column.
@@ -806,38 +826,33 @@ def appendix_rows(
     lines = []
     for index, (key, label) in enumerate(LOGS):
         lines.append(f"    \\multirow{{{n_rows}}}{{*}}{{{_new(label, new)}}}")
-        for families, arms, levels in groups:
-            for family in families:
-                settings = [t for t in (-1.0, 0.0) if family in arms.get(t, ())]
-                for i, tpat in enumerate(settings):
-                    for j, (level, campaign) in enumerate(levels.items()):
-                        units = campaign[
-                            (campaign["dataset"] == key)
-                            & (campaign["tpat"] == tpat)
-                            & (campaign["model_type"] == family)
-                        ]
-                        first = j == 0
-                        name = FAMILY_LABELS[family]
-                        name = (
-                            _spanning(name, len(settings) * len(levels), new)
-                            if first and i == 0
-                            else ""
-                        )
-                        tpat_cell = (
-                            _spanning(f"${tpat:.1f}$", len(levels), new)
-                            if first
-                            else ""
-                        )
-                        values = cells(units, new)
-                        labels = [name, tpat_cell]
-                        if net_column:
-                            labels.append(_new(LEVELS[level], new))
-                        lines.append(
-                            "      & " + " & ".join([*labels, *values]) + " \\\\"
-                        )
-                if family == "re_mined":
-                    last = 3 + net_column + len(values)
-                    lines.append(f"      \\cmidrule(l){{2-{last}}}")
+        for family, (_, arms, levels) in _in_row_order(groups):
+            settings = [t for t in (-1.0, 0.0) if family in arms.get(t, ())]
+            for i, tpat in enumerate(settings):
+                for j, (level, campaign) in enumerate(levels.items()):
+                    units = campaign[
+                        (campaign["dataset"] == key)
+                        & (campaign["tpat"] == tpat)
+                        & (campaign["model_type"] == family)
+                    ]
+                    first = j == 0
+                    name = FAMILY_LABELS[family]
+                    name = (
+                        _spanning(name, len(settings) * len(levels), new)
+                        if first and i == 0
+                        else ""
+                    )
+                    tpat_cell = (
+                        _spanning(f"${tpat:.1f}$", len(levels), new) if first else ""
+                    )
+                    values = cells(units, new)
+                    labels = [name, tpat_cell]
+                    if net_column:
+                        labels.append(_new(LEVELS[level], new))
+                    lines.append("      & " + " & ".join([*labels, *values]) + " \\\\")
+            if family == "re_mined":
+                last = 3 + net_column + len(values)
+                lines.append(f"      \\cmidrule(l){{2-{last}}}")
         lines.append("    \\midrule" if index < len(LOGS) - 1 else "    \\bottomrule")
     return "\n".join(lines) + "\n"
 
@@ -1135,7 +1150,8 @@ def build_into(
     """Write every generated file into ``out``; return the prose numbers.
 
     With ``highlight_against``, the submitted manuscript's directory, every table value
-    that differs from the submitted one is wrapped in ``\\rev``.
+    that differs from the submitted one is wrapped in ``\\rev``, and the submitted
+    Table 2's rows are written to ``PREVIOUS_ROWS`` for the appendix.
     """
     manifest = read_manifest(results)
     old1, old2 = (
@@ -1161,6 +1177,11 @@ def build_into(
     out.mkdir(parents=True, exist_ok=True)
 
     rows1, numbers = table1(results, manifest, old1)
+    if highlight_against:
+        # The appendix keeps the submitted Table 2 for comparison, as submitted.
+        (out / PREVIOUS_ROWS).write_text(
+            (highlight_against / "tab-quality-rows-structure.tex").read_text()
+        )
     (out / "tab-logs-rows.tex").write_text(rows1)
     (out / "tab-quality-rows-structure.tex").write_text(
         table2(results, manifest, reduced, old2, history)
@@ -1215,6 +1236,9 @@ def build_into(
     return numbers
 
 
+#: The submitted Table 2's rows, written with ``highlight_against`` only.
+PREVIOUS_ROWS = "tab-quality-rows-previous.tex"
+
 GENERATED_TEXT = (
     "numbers.tex",
     "tab-logs-rows.tex",
@@ -1226,12 +1250,18 @@ GENERATED_TEXT = (
 )
 
 
+def _generated(highlight_against: Path | None) -> tuple[str, ...]:
+    """The text files a build writes; with highlighting, the submitted rows too."""
+    return GENERATED_TEXT + ((PREVIOUS_ROWS,) if highlight_against else ())
+
+
 def build(args: argparse.Namespace) -> int:
     numbers = build_into(args.results, args.out, args.highlight_against)
+    written = _generated(args.highlight_against)
     width = max(map(len, numbers))
     for name, value in numbers.items():
         print(f"  \\pmf{name:<{width}}  {value}")
-    print(f"wrote {', '.join(GENERATED_TEXT)} and the two PDFs -> {args.out}")
+    print(f"wrote {', '.join(written)} and the two PDFs -> {args.out}")
     return 0
 
 
@@ -1241,7 +1271,7 @@ def check(args: argparse.Namespace) -> int:
     with tempfile.TemporaryDirectory() as tmp:
         fresh = Path(tmp)
         numbers = build_into(args.results, fresh, args.highlight_against)
-        for name in GENERATED_TEXT:
+        for name in _generated(args.highlight_against):
             current = args.manuscript / name
             if not current.exists():
                 print(f"MISSING {name}")
@@ -1265,6 +1295,7 @@ def check(args: argparse.Namespace) -> int:
         "tab-quality-rows-structure",
         "tab-outcomes-rows",
         "tab-unreduced-rows",
+        *(["tab-quality-rows-previous"] if args.highlight_against else []),
     ):
         if needed not in main_tex:
             print(f"main.tex does not use {needed}")

@@ -309,3 +309,29 @@ def test_appendix_rows_span_the_reduction_levels_and_carry_a_net_column(paper):
     assert first_log[2].startswith("      &  &  & reduced & ")
     assert first_log[5] == "      \\cmidrule(l){2-17}"
     assert first_log[6].startswith("      & Persistence & $0.0$ & reduced & ")
+
+
+def test_rows_put_persistence_after_direct_mined_and_expanding_after_static(paper):
+    none = pd.DataFrame(
+        columns=["dataset", "tpat", "model_type", "evaluator", "guard_status"]
+    ).assign(guard_reason="")
+    main = ("forecast", "re_mined", "direct_mined", "static")
+    history = ("persistence", "expanding")
+    groups = [
+        (main, {0.0: main}, {"tau": none}),
+        (history, {0.0: history}, {"tau": none}),
+    ]
+    first_log = paper.appendix_rows(groups, paper.outcome_cells).split("\\midrule")[0]
+    names = [
+        line.split("&")[1].strip()
+        for line in first_log.splitlines()
+        if line.lstrip().startswith("&")
+    ]
+    assert names == [
+        "Forecast",
+        "Re-mined",
+        "Direct-mined",
+        "Persistence",
+        "Static",
+        "Expanding",
+    ]
